@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Upload PDF{% endblock %}
+
+{% block content %}
+    <h1>RateMyPDF - Upload PDF</h1>
+    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="application/pdf" id="pdf-file">
+        <button type="submit">Upload</button>
+    </form>
+    <div id="upload-spinner" class="hidden">
+        <div class="loader"></div>
+    </div>
+    <div id="file-information">        
+    </div>
+
+
+    <style>
+        .hidden { display: none; }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+<script>
+    document.getElementById("upload-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const fileInput = document.getElementById("pdf-file");
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert("Please select a file to upload.");
+            return;
+        }
+
+        // Show the spinner while the file is being uploaded
+        const spinner = document.getElementById("upload-spinner");
+        spinner.style.display = "block";
+
+        // Upload the PDF
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            spinner.style.display = "none";
+
+            if (!response.ok) {
+                throw new Error("An error occurred while uploading the file.");
+            }
+
+            const data = await response.json();
+            const { filename, size } = data;
+
+            // Check if the PDF has form fields
+            const preprocessResponse = await fetch("/api/preprocess", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!preprocessResponse.ok) {
+                throw new Error("An error occurred while preprocessing the PDF.");
+            }
+
+            const preprocessData = await preprocessResponse.json();
+            const { has_form_fields } = preprocessData;
+
+            // Update the page content with the file information
+            const fileInformation = document.getElementById("file-information");
+            fileInformation.innerHTML = `
+                <h2>File Information</h2>
+                <p>Filename: ${filename}</p>
+                <p>Size: ${size} bytes</p>
+            `;
+
+            // if (!has_form_fields) {
+            //     const addFormFields = document.getElementById("add-form-fields");
+            //     addFormFields.style.display = "block";
+            // }
+        } catch (error) {
+            spinner.style.display = "none";
+            alert(error.message);
+        }
+    });
+
+    // document.getElementById("add-form-fields-btn").addEventListener("click", function() {
+    //     // Redirect to a new page or call the appropriate function to add form fields to the PDF
+    // });
+</script>
+
+{% endblock %}

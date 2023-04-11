@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Information{% endblock %}
+
+{% block content %}
+    <h1>RateMyPDF - PDF Information</h1>
+    <ul>
+        <li>Filename: {{ filename }}</li>
+        <li>Size: {{ size }} bytes</li>
+    </ul>
+{% endblock %}
