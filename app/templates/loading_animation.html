@@ -38,7 +38,7 @@
     }
 
     .processing-text {
-        font-size: 24px;
+        font-size: 18px;
         display: flex;
         align-items: center;
       }
@@ -76,11 +76,26 @@
           opacity: 0;
         }
       }
-      
+
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+    
+      svg {
+        max-width: 300px; /* Adjust this value to control the size of the animation */
+        max-height: 300px;
+        margin-bottom: 1rem; /* Adjust this value to control the space between the animation and the text */
+      }      
   </style>
 </head>
 <body>
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" >
         <path id="form-path" d="M10,10 L90,10 L90,90 L10,90 L10,10 Z" fill="none" stroke="black" stroke-width="2"></path>
         <path id="text-line-1" d="M20,22 L55,22 M65,22 L80,22" fill="none" stroke="black" stroke-width="1"></path>
         <path id="text-line-2" d="M20,40 L50,40 M60,40 L80,40" fill="none" stroke="black" stroke-width="1"></path>

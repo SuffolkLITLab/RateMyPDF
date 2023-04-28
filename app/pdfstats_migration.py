@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import Response
 from rq import Queue
 from rq.decorators import job
+from rq.exceptions import NoSuchJobError
 import rq
 import pikepdf
 
@@ -239,15 +240,28 @@ async def view_stats(request: Request, file_hash: str):
 
 @app.get("/job-status/{job_id}")
 async def get_job_status(request: Request, job_id: str):
-    job = rq.job.Job.fetch(job_id, connection=conn)
-    
-    if job.is_failed:
-        return {"status": "failed"}
+    try:
+        job = rq.job.Job.fetch(job_id, connection=conn)
+        
+        if job.is_failed:
+            return {"status": "failed"}
 
-    if not job.is_finished:
-        return {"status": "pending"}
+        if not job.is_finished:
+            return {"status": "pending"}
+    except NoSuchJobError:
+        pass
 
+    # We end up here if the job finished processing OR 
+    # if there is a previously cached file
     file_hash = job_id
+    stats_path = os.path.join(UPLOAD_FOLDER, file_hash)
+    stats_file_path = os.path.join(stats_path, "stats.json")
+    if os.path.isdir(stats_path):
+        if not os.path.isfile(os.path.join(stats_path, "stats.json")):
+            return {"status": "stats file missing"}
+    else:
+        return {"status": "directory missing"}
+
     # Load the stats from the stats.json file
     stats_file_path = os.path.join(UPLOAD_FOLDER, file_hash, "stats.json")
     with open(stats_file_path, "r") as stats_file:
