@@ -112,8 +112,11 @@ def get_pdf_title_from_hash(file_hash:str) -> str:
         the_pdf.close()
         return title
     except:
-        path_without_extension = Path(f).stem
-        return path_without_extension.replace("-"," ").replace("_", " ")
+        if f:
+            path_without_extension = Path(f).stem
+            return path_without_extension.replace("-"," ").replace("_", " ")
+        else:
+            return ""
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -229,6 +232,12 @@ async def view_stats(request: Request, file_hash: str):
     """
     if not (file_hash and valid_hash(file_hash)):
         raise HTTPException(status_code=400, detail="Invalid filename")
+    try:
+        job = rq.job.Job.fetch(file_hash, connection=conn)
+    except NoSuchJobError:
+        stats_path = os.path.join(UPLOAD_FOLDER, file_hash)
+        if not os.path.isdir(stats_path) or not os.path.isfile(os.path.join(stats_path, "stats.json")):
+            return RedirectResponse("/")
     
     variables = {
         "request": request,
@@ -257,13 +266,11 @@ async def get_job_status(request: Request, job_id: str):
     stats_path = os.path.join(UPLOAD_FOLDER, file_hash)
     stats_file_path = os.path.join(stats_path, "stats.json")
     if os.path.isdir(stats_path):
-        if not os.path.isfile(os.path.join(stats_path, "stats.json")):
+        if not os.path.isfile(stats_file_path):
             return {"status": "stats file missing"}
     else:
         return {"status": "directory missing"}
-
-    # Load the stats from the stats.json file
-    stats_file_path = os.path.join(UPLOAD_FOLDER, file_hash, "stats.json")
+    
     with open(stats_file_path, "r") as stats_file:
         stats = json.loads(stats_file.read())
 
