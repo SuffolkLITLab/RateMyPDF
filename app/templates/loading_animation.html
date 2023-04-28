@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @keyframes draw-undraw-box {
+      0%, 100% {
+        stroke-dasharray: 0, 320;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 320, 320;
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes draw-undraw-text {
+      0%, 100% {
+        stroke-dasharray: 0, 60;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 60, 60;
+        stroke-dashoffset: 0;
+      }
+    }
+
+    #form-path {
+      animation: draw-undraw-box 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    #text-line-1,
+    #text-line-2,
+    #text-line-3,
+    #text-line-4 {
+      animation: draw-undraw-text 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .processing-text {
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+      }
+      
+      .ellipsis {
+        display: inline-flex;
+        margin-left: 4px;
+      }
+      
+      .dot {
+        animation: ellipsis 1.2s infinite;
+        opacity: 0;
+      }
+      
+      .dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+      
+      .dot:nth-child(2) {
+        animation-delay: 0.4s;
+      }
+      
+      .dot:nth-child(3) {
+        animation-delay: 0.8s;
+      }
+      
+      @keyframes ellipsis {
+        0% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      
+  </style>
+</head>
+<body>
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path id="form-path" d="M10,10 L90,10 L90,90 L10,90 L10,10 Z" fill="none" stroke="black" stroke-width="2"></path>
+        <path id="text-line-1" d="M20,22 L55,22 M65,22 L80,22" fill="none" stroke="black" stroke-width="1"></path>
+        <path id="text-line-2" d="M20,40 L50,40 M60,40 L80,40" fill="none" stroke="black" stroke-width="1"></path>
+        <path id="text-line-3" d="M20,58 L45,58 M55,58 L80,58" fill="none" stroke="black" stroke-width="1"></path>
+        <path id="text-line-4" d="M20,76 L35,76 M45,76 L80,76" fill="none" stroke="black" stroke-width="1"></path>
+      </svg>
+          
+  <div class="processing-text">
+    <span>Processing PDF</span>
+    <span class="ellipsis">
+      <span class="dot">.</span>
+      <span class="dot">.</span>
+      <span class="dot">.</span>
+    </span>
+  </div>
+  
+</body>
+</html>
