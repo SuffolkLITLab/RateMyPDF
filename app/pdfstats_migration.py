@@ -221,7 +221,7 @@ async def download_file(file_hash: str) -> Response:
 
 
 @app.get("/view/{file_hash}", response_class=HTMLResponse)
-async def view_stats(request: Request, file_hash: str):
+async def view_stats(request: Request, file_hash: str) -> Response:
     """Display the statistics of a previously uploaded and processed file.
 
     Args:
@@ -237,6 +237,7 @@ async def view_stats(request: Request, file_hash: str):
     except NoSuchJobError:
         stats_path = os.path.join(UPLOAD_FOLDER, file_hash)
         if not os.path.isdir(stats_path) or not os.path.isfile(os.path.join(stats_path, "stats.json")):
+            logger.warning(f"No job or existing cache found for {file_hash}")
             return RedirectResponse("/")
     
     variables = {

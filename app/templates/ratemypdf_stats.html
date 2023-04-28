@@ -18,6 +18,7 @@
     crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/checkmark-hand-drawn-outline.svg') }}">
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="{{ url_for('static', path='js/gauge_chart.js') }}"></script>
   <script>
     const fileHash = "{{ file_hash }}";
 
@@ -28,6 +29,7 @@
       if (data.status === "finished") {
         // Update the page with the rendered stats
         document.getElementById("stats-container").innerHTML = data.rendered_stats;
+        loadGaugeChart(parseFloat(document.getElementById("complexity-score").value), parseFloat(document.getElementById("complexity-mean").value), parseFloat(document.getElementById("complexity-stddev").value));
         return;
       }
 
