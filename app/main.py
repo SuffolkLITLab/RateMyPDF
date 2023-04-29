@@ -49,7 +49,10 @@ templates = Jinja2Templates(directory="templates")
 templates.env.filters["format_number"] = format_number
 
 SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
-UPLOAD_FOLDER = "/pdf-files"
+if os.getenv("IN_DOCKER", "False").lower() == "true": 
+    UPLOAD_FOLDER = "/pdf-files"
+else:
+    UPLOAD_FOLDER = "/tmp"
 ALLOWED_EXTENSIONS = {"pdf"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
