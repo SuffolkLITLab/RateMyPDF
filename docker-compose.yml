@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: ratemypdf_web
+    depends_on:
+      - redis
+    volumes:
+      - pdf-files:/pdf-files
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=myresolver"
+      - "traefik.http.routers.api.rule=Host(`monitor.${DOMAIN}`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=myresolver"
+      - "traefik.http.routers.api.service=api@internal"
+    env_file:
+      - .env
+
+  redis:
+    image: redis:alpine
+    container_name: ratemypdf_redis
+
+  worker:
+    build: .
+    container_name: ratemypdf_worker
+    command: rq worker
+    depends_on:
+      - redis
+    volumes:
+      - pdf-files:/pdf-files
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  traefik:
+    image: traefik:v2.5
+    container_name: ratemypdf_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=websecure"
+      - "--certificatesresolvers.myresolver.acme.email=suffolklitlab@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+
+volumes:
+  pdf-files:
