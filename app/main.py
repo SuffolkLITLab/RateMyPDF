@@ -208,7 +208,13 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
             parse_form_job,
             to_path,
             filename,
-            openai_creds=os.environ.get("OPEN_AI"),
+            openai_creds= (
+                {
+                    "org": os.environ.get("OPEN_AI__org"),
+                    "key": os.environ.get("OPEN_AI__key"),
+                } if os.environ.get("OPEN_AI__org") 
+                else None
+            ),
             spot_token=os.environ.get("SPOT_TOKEN"),
             tools_token=os.environ.get("TOOLS_TOKEN"),
             debug=os.environ.get("RATEMYPDF_DEBUG"),
