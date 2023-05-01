@@ -4,3 +4,5 @@ aiofiles
 python-multipart
 jinja2
 pikepdf
+git+https://github.com/SuffolkLITLab/FormFyxer.git
+rq
