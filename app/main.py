@@ -1,3 +1,4 @@
+import requests
 import json
 import math
 import os
@@ -15,7 +16,7 @@ from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import Response
-from rq import Queue
+from rq import Queue, get_current_job
 from rq.decorators import job
 from rq.exceptions import NoSuchJobError
 import rq
@@ -53,7 +54,7 @@ if os.getenv("IN_DOCKER", "False").lower() == "true":
     UPLOAD_FOLDER = "/pdf-files"
 else:
     UPLOAD_FOLDER = "/tmp"
-ALLOWED_EXTENSIONS = {"pdf"}
+ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -131,6 +132,49 @@ def get_pdf_title_from_hash(file_hash: str) -> str:
             return path_without_extension.replace("-", " ").replace("_", " ")
         else:
             return ""
+        
+def has_fields(pdf_file: str) -> bool:
+    """
+    Check if a PDF has at least one form field using PikePDF.
+
+    Args:
+        pdf_file (str): The path to the PDF file.
+
+    Returns:
+        bool: True if the PDF has at least one form field, False otherwise.
+    """
+    with pikepdf.open(pdf_file) as pdf:
+        for page in pdf.pages:
+            if '/Annots' in page:
+                for annot in page.Annots:
+                    if annot.Type == '/Annot' and annot.Subtype == '/Widget':
+                        return True
+    return False
+
+def convert_word_to_pdf(input_file: str, output_file: str, gotenberg_url: str):
+    """
+    Convert a Word document to a PDF using the Gotenberg API.
+
+    Args:
+        input_file (str): The path to the input Word document.
+        output_file (str): The path to the output PDF file.
+        gotenberg_url (str): The base URL of the Gotenberg service.
+
+    Raises:
+        Exception: If the conversion fails and returns a non-200 status code.
+    """    
+    gotenberg_url = gotenberg_url + '/forms/libreoffice/convert'
+    with open(input_file, 'rb') as file:
+        response = requests.post(
+            gotenberg_url,
+            files={'files': (Path(input_file).name, file)}
+        )
+
+    if response.status_code == 200:
+        with open(output_file, 'wb') as file:
+            file.write(response.content)
+    else:
+        raise Exception(f"Conversion failed with status code: {response.status_code}")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -160,6 +204,31 @@ def parse_form_job(
     Saves:
         stats.json: A JSON file containing the parsed form statistics, saved in the same directory as the PDF file.
     """
+    was_docx = False
+    current_job = get_current_job()
+    # Check for DOCX uploads. Convert them to PDF
+    if filename.lower().endswith('.doc') or filename.lower().endswith('.docx'):
+        was_docx = True        
+        current_job.meta['status'] = 'converting_word_to_pdf'        
+        current_job.save_meta()
+        path_without_extension = Path(filename).stem
+        convert_word_to_pdf(
+            os.path.join(to_path, filename),
+            os.path.join(
+                to_path,
+                path_without_extension + ".pdf"
+            ),
+            os.environ.get('GOTENBERG_URL', 'http://localhost:3000'),
+        )
+        filename = path_without_extension + ".pdf"
+
+    # Check for PDF fields
+    if was_docx or not has_fields(os.path.join(to_path, filename)):
+        current_job.meta["status"] = 'detecting_pdf_fields'
+        current_job.save_meta()
+        formfyxer.auto_add_fields(os.path.join(to_path, filename), os.path.join(to_path, filename))
+
+    current_job.meta['status'] = 'analyzing_pdf'
     stats = formfyxer.parse_form(
         os.path.join(to_path, filename),
         normalize=True,
@@ -290,7 +359,14 @@ async def get_job_status(request: Request, job_id: str):
             return {"status": "failed"}
 
         if not job.is_finished:
-            return {"status": "pending"}
+            if job.meta.get('status') == "converting_word_to_pdf":
+                return {"status": "pending", "status_message": "Converting Word to PDF"}
+            if job.meta.get('status') == "detecting_pdf_fields":
+                return {"status": "pending", "status_message": "Detecting PDF fields"}
+            if job.meta.get('status') == "analyzing_pdf":
+                return {"status": "pending", "status_message": "Analyzing PDF"}
+                        
+            return {"status": "pending", "status_message": "Analyzing PDF"}
     except NoSuchJobError:
         pass
 

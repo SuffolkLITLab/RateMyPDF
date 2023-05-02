@@ -26,24 +26,29 @@
     async function checkJobStatus() {
       const response = await fetch(`/job-status/${fileHash}`);
       const data = await response.json();
-
+    
       if (data.status === "finished") {
         // Update the page with the rendered stats
         document.getElementById("stats-container").innerHTML = data.rendered_stats;
         loadGaugeChart(parseFloat(document.getElementById("complexity-score").value), parseFloat(document.getElementById("complexity-mean").value), parseFloat(document.getElementById("complexity-stddev").value));
         return;
       }
-
+    
       if (data.status === "failed") {
         // Handle job failure
         alert("Failed to process the file.");
         return;
       }
-
+    
+      if (data.status === "pending" && data.status_message) {
+        // Update the status message in the loading animation iframe
+        document.getElementById("loading-animation").contentWindow.document.getElementById("status-message").innerHTML = data.status_message;
+      }
+    
       // If the job is still pending, check the status again after a delay
       setTimeout(checkJobStatus, 1000);
     }
-
+    
     // Start checking the job status when the page loads
     window.addEventListener("load", checkJobStatus);
   </script>

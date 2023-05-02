@@ -1,8 +1,10 @@
+requests
 fastapi
 uvicorn
 aiofiles
 python-multipart
 jinja2
 pikepdf
+pdf2image
 git+https://github.com/SuffolkLITLab/FormFyxer.git
 rq
