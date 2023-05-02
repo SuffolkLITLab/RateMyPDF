@@ -12,12 +12,12 @@ services:
       - DOMAIN=${DOMAIN:-localhost}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.routers.web.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-      - "traefik.http.routers.websecure.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.websecure.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
       - "traefik.http.routers.websecure.entrypoints=websecure"
       - "traefik.http.routers.websecure.tls.certresolver=myresolver"
       - "traefik.http.routers.api.rule=Host(`monitor.${DOMAIN}`)"
