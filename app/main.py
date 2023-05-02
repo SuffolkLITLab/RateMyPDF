@@ -182,7 +182,7 @@ async def upload_file(request: Request):
     return templates.TemplateResponse("ratemypdf.html", {"request": request})
 
 
-@job("default", connection=conn)
+@job("default", connection=conn, timeout=360)
 def parse_form_job(
     to_path: str,
     filename: str,
@@ -288,6 +288,7 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
             tools_token=os.environ.get("TOOLS_TOKEN"),
             debug=os.environ.get("RATEMYPDF_DEBUG"),
             job_id=intermediate_dir,
+            job_timeout=600
         )
 
         logger.info(f"Started job {job.id}")
