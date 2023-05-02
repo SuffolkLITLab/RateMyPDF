@@ -215,6 +215,37 @@
   </div>
 </div>
 
+<div class="container mt-3">
+  <h2 class="mt-5 mb-4">
+    {% if not stats.get("pdf_is_tagged") %}
+    <span class="fa-stack">
+      <i class="fa fa-ban fa-stack-2x text-danger"></i>
+      <i class="fa-brands fa-accessible-icon fa-stack-1x"></i>
+    </span>    
+    {% else %}
+    <i class="fa-brands fa-accessible-icon"></i>
+    {% endif %}
+    Accessibility information</h2>
+
+  <p>The PDF {% if stats.get("pdf_is_tagged") %}<b>is tagged</b>{% else %}<b>is not tagged</b>{% endif %}
+  for accessibility. Tagging provides structure to a PDF so it can be better
+  read aloud by a screen reader or navigated by keyboard or alternative input device. Tagging is the 
+  <em>minimum</em> for accessible PDFs but not all tagged PDFs will make sense to a screen reader.
+  </p>
+  <p><a href="https://webaim.org/techniques/acrobat/">Read more about making PDFs accessible</a></p>
+</div>
+
+{% if False and stats.get("list") and "status" not in stats.get("list") %} <!-- There's no useful way to display SPOT codes yet -->
+<div class="container mt-3">
+  <h2 class="mt-5 mb-4">Legal topics</h2>
+
+  <p>
+    {{ stats.get("list") }}
+  </p>
+  We use the SPOT classifier to detect the legal topics mentioned in your PDF.
+</div>
+{% endif %}
+
       </section>
      
       <section class="pdf-suggestions-section">
@@ -385,6 +416,7 @@
             </div>
           </div>
           {% endif %}
+          
 
       </div>            
       </section>
