@@ -123,117 +123,6 @@
             
             </div>
           </div>
-          <div class="row">
-            <h2 class="text-center mt-4">Detailed statistics</h2>
-            <div class="col-md-6">
-              {{ percent_widget("difficult-words", "Percentage of difficult words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
-              </div>
-
-              <div class="col-md-6">
-                {{ percent_widget("passive-voice", "Percent passive voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
-              </div>
-          </div>
-
-          <div class="row">
-
-            <div class="col-md-4">
-            {{ score_position_widget("readability-info","Reading grade level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
-            </div>
-
-            <div class="col-md-4">
-                {{ score_position_widget("citation", "Number of legal citations", 'We recommend leaving citations out of your court form. We measure citations with <a href="https://free.law/projects/eyecite">EyeCite</a>, which often does not capture short form citations to state statutes.', stats.get("citation count"), metric_means["citation count"], metric_stddev["citation count"]) }}
-            </div>
-            
-            <div class="col-md-4">
-              {{ score_position_widget("fields", "Number of fields", "", stats.get("total fields"), metric_means["total fields"], metric_stddev["total fields"]) }}
-            </div>
-
-            <div class="col-md-4">
-              {{ score_position_widget("pages", "Number of pages", "", stats.get("pages"), metric_means["pages"], metric_stddev["pages"]) }}
-            </div>
-
-            <div class="col-md-4">
-              {{ score_position_widget("fields-per-page", "Fields per page", "", stats.get("avg fields per page"), metric_means["avg fields per page"], metric_stddev["avg fields per page"]) }}
-            </div>
-
-            <div class="col-md-4">
-              {{ score_position_widget("word-count", "Words per page", 'Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count around 100 words.', word_count_per_page, 110, 30) }}
-            </div>
-
-            <div class="col-md-4">
-              {{ score_position_widget("sentence-count", "Sentences per page", "", stats.get("sentences per page"), metric_means["sentences per page"], metric_stddev["sentences per page"])}}
-            </div>
-
-          </div>
-  <!-- Legend -->
-  <div class="d-flex mt-3">
-    <div class="legend-item">
-      <div class="legend-color bg-success"></div>
-      <span>Green: 1 standard deviation below the mean</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color bg-warning"></div>
-      <span>Yellow: within 1 standard deviation of the mean</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color bg-danger"></div>
-      <span>Red: more than 1 standard deviation above the mean</span>
-    </div>
-  </div>
-</div>
-
-<!-- -->
-<div class="container">
-  <h2 class="mt-5 mb-4">Field classification</h2>
-
-  <!-- Stacked bar chart -->
-  <div class="bar w-50">
-    <div class="bar-segment bg-success" style="width: {{ stats.get('slotin percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the slotin stat -->
-    <div class="bar-segment bg-secondary" style="width: {{ stats.get('gathered percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the gathered stat -->
-    <div class="bar-segment bg-warning" style="width: {{ stats.get('third party percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the third-party stat -->
-    <div class="bar-segment bg-danger" style="width: {{ stats.get('created percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the created stat -->
-  </div>
-
-  <!-- Legend -->
-  <div class="d-flex mt-3">
-    <div class="legend-item">
-      <div class="legend-color bg-success"></div>
-      <span>Slot-in fields: {{ round(stats.get('slotin percent', 0) * 100, 1) }}%</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color bg-secondary"></div>
-      <span>Gathered fields: {{ round(stats.get('gathered percent', 0) * 100, 1) }}%</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color bg-warning"></div>
-      <span>Third-party fields: {{ round(stats.get('third party percent', 0) * 100,1) }}%</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-color bg-danger"></div>
-      <span>Created fields: {{ round(stats.get('created percent', 0) * 100, 1) }}%</span>
-    </div>
-  </div>
-</div>
-
-<div class="container mt-3">
-  <h2 class="mt-5 mb-4">
-    {% if not stats.get("pdf_is_tagged") %}
-    <span class="fa-stack">
-      <i class="fa fa-ban fa-stack-2x text-danger"></i>
-      <i class="fa-brands fa-accessible-icon fa-stack-1x"></i>
-    </span>    
-    {% else %}
-    <i class="fa-brands fa-accessible-icon"></i>
-    {% endif %}
-    Accessibility information</h2>
-
-  <p>The PDF {% if stats.get("pdf_is_tagged") %}<b>is tagged</b>{% else %}<b>is not tagged</b>{% endif %}
-  for accessibility. Tagging provides structure to a PDF so it can be better
-  read aloud by a screen reader or navigated by keyboard or alternative input device. Tagging is the 
-  <em>minimum</em> for accessible PDFs but not all tagged PDFs will make sense to a screen reader.
-  </p>
-  <p><a href="https://webaim.org/techniques/acrobat/">Read more about making PDFs accessible</a></p>
-</div>
 
 {% if False and stats.get("list") and "status" not in stats.get("list") %} <!-- There's no useful way to display SPOT codes yet -->
 <div class="container mt-3">
@@ -250,19 +139,40 @@
      
       <section class="pdf-suggestions-section">
         <h2 class="pdf-section-heading">Suggestions</h2>
-        <ul>
-          <li>Use shorter sentences to improve readability</li>
-          <li>Avoid using passive voice where possible</li>
-          <li>Consider using simpler words to improve clarity</li>
-          <li>Break up longer paragraphs into shorter ones</li>
-        </ul>
 
+        <p>
+          <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/question_overview">How to write good questions</a>
+          for forms and guided interviews.
+        </p>        
         <div class="accordion" id="suggestionsAccordion">
+          {% if not stats.get("pdf_is_tagged") %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-tagging">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-tagging" aria-expanded="false" aria-controls="collapse-tagging">
+                <span class="fa-stack">
+                  <i class="fa fa-ban fa-stack-2x text-danger"></i>
+                  <i class="fa-brands fa-accessible-icon fa-stack-1x"></i>
+                </span>                
+                Tag this PDF for accessibility
+              </button>
+            </h2>
+            <div id="collapse-tagging" class="accordion-collapse collapse" aria-labelledby="heading-tagging" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>This PDF is not <em>tagged</em>.</p>
+                <p>
+                  Tagging provides structure to a PDF so it can be better
+                  read aloud by a screen reader or navigated by keyboard or alternative input device. Tagging is the 
+                  <em>minimum</em> for accessible PDFs but not all tagged PDFs will make sense to a screen reader.
+                </p>
+                <p><a href="https://webaim.org/techniques/acrobat/">Read more about making PDFs accessible</a></p>
+              </div>
+          </div>
+          {% endif %}
           {% if stats.get("suggested title") and stats["suggested title"].lower().strip() not in ["abortthisnow.", "apierror"]%}
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-title">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-title" aria-expanded="false" aria-controls="collapse-title">
-                Suggested plain language title
+                Use this plain language title
               </button>
             </h2>
             <div id="collapse-title" class="accordion-collapse collapse" aria-labelledby="heading-title" data-bs-parent="#suggestionsAccordion">
@@ -276,7 +186,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-description">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-description" aria-expanded="false" aria-controls="collapse-description">
-                Suggested plain language description
+                Use this plain language description
               </button>
             </h2>
             <div id="collapse-description" class="accordion-collapse collapse" aria-labelledby="heading-description" data-bs-parent="#suggestionsAccordion">
@@ -291,11 +201,14 @@
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-passive-voice">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-passive-voice" aria-expanded="false" aria-controls="collapse-passive-voice">
-                Sentences with passive voice
+                Rewrite sentences to use the active voice
               </button>
             </h2>
             <div id="collapse-passive-voice" class="accordion-collapse collapse" aria-labelledby="heading-passive-voice" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
+                <p>Passive voice is harder for people with lower literacy levels and English-language learners to understand.
+                  Try to rewrite these sentences to use the active voice.
+                </p>
                 <ul>
                 {% for sentence in stats.get("passive sentences", []) %}
                 <li>
@@ -307,40 +220,24 @@
             </div>
           </div>
           {% endif %}
-          {% if stats.get("difficult words", []) %}
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="heading-difficult-words">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-difficult-words" aria-expanded="false" aria-controls="collapse-difficult-words">
-                Consider replacing difficult words
-              </button>
-            </h2>
-            <div id="collapse-difficult-words" class="accordion-collapse collapse" aria-labelledby="heading-difficult-words" data-bs-parent="#suggestionsAccordion">
-              <div class="accordion-body">
-                Words on this list are not listed in the Dale-Chall wordlist of the most common
-                English language words.
-                <ul>
-                {% for word in stats.get("difficult words", []) %}
-                <li>
-                  {{ word  }}
-                </li>
-                {% endfor %}
-                </ul>
-              </div>
-            </div>
-          </div>
-          {% endif %}
           {% if stats.get("plain language suggestions") %}
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-plain-lang-suggestions">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-plain-lang-suggestions" aria-expanded="false" aria-controls="collapse-plain-lang-suggestions">
-                Consider substituting simpler words and phrases
+                Use simpler phrases and words
               </button>
             </h2>
             <div id="collapse-plain-lang-suggestions" class="accordion-collapse collapse" aria-labelledby="heading-plain-lang-suggestions" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
+                <p>
+                  These phrases and words use complex phrasing or legal jargon. Try rewriting them to use the simpler replacement
+                  phrases we list below.
+                </p>
+                <p>
                 We refer to <a href="https://www.plainlanguage.gov/guidelines/words/">plainlanguage.gov</a>'s list of common
                 complex words and simple replacements. Apply judgement and read the words in context to make sure the replacements
                 still make sense.
+                </p>  
                 <div class="text-break">
                 <table class="table">
                     <tr>
@@ -368,11 +265,15 @@
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-neutral-gender">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-neutral-gender" aria-expanded="false" aria-controls="collapse-neutral-gender">
-                Consider replacing gendered words
+                Use gender neutral terms
               </button>
             </h2>
             <div id="collapse-neutral-gender" class="accordion-collapse collapse" aria-labelledby="heading-neutral-gender" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
+                <p>
+                  Using <a href="https://www.ncsc.org/__data/assets/pdf_file/0028/84916/Gender-Inclusivity-in-the-Courts.pdf">gender inclusive language</a>
+                  makes all users of your court feel more welcome. Replace the gendered terms with the suggestions below.
+                </p>
                 <div class="text-break">
                 <table class="table">
                   <thead>
@@ -400,11 +301,15 @@
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-citations">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-citations" aria-expanded="false" aria-controls="collapse-citations">
-                Consider removing citations
+                Remove unneeded citations
               </button>
             </h2>
             <div id="collapse-citations" class="accordion-collapse collapse" aria-labelledby="heading-citations" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
+                <p>
+                  Citations can add clutter to your forms. If you must include a citation, put it in a place that will not
+                  distract self-represented litigants. And keep the number of citations to a minimum.
+                </p>
                 <ul>
                 {% for suggestion in stats.get("citations") %}
                 <li>
@@ -416,7 +321,233 @@
             </div>
           </div>
           {% endif %}
-          
-
-      </div>            
+          {% if stats.get("difficult words", []) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-difficult-words">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-difficult-words" aria-expanded="false" aria-controls="collapse-difficult-words">
+                Review and replace remaining difficult words
+              </button>
+            </h2>
+            <div id="collapse-difficult-words" class="accordion-collapse collapse" aria-labelledby="heading-difficult-words" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                The words from your PDF below are not common English language words (they don't appear in the Dale-Chall word list). 
+                Consider replacing them with simpler words.
+                </p>
+                <ul>
+                {% for word in stats.get("difficult words", []) %}
+                <li>
+                  {{ word  }}
+                </li>
+                {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("pages", 0) > metric_means["pages"] + metric_stddev["pages"] %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-pages">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-pages" aria-expanded="false" aria-controls="collapse-pages">
+                Reduce the number of pages
+              </button>
+            </h2>
+            <div id="collapse-pages" class="accordion-collapse collapse" aria-labelledby="heading-pages" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                  The number of pages in your form is above average. If it is possible to eliminate some questions,
+                  consider doing so to make it easier for self-represented litigants to complete your form. You might
+                  also consider separating your form into multiple forms or finding a way to answer some
+                  questions without asking the litigant. (We don't recommend increasing the number of fields
+                  per page).
+                </p>
+              </div>
+            </div>
+          {% endif %}
+          {% if stats.get("total fields", 0) > metric_means["total fields"] + metric_stddev["total fields"] %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-fields">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-fields" aria-expanded="false" aria-controls="collapse-fields">
+                Reduce the total number of fields
+              </button>
+            </h2>
+            <div id="collapse-fields" class="accordion-collapse collapse" aria-labelledby="heading-fields" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                  The total number of fields in your form is above average. Consider reducing the number of fields to make it easier
+                  for self-represented litigants to complete.
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("avg fields per page", 0) > metric_means["avg fields per page"] + metric_stddev["avg fields per page"] %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-fields-per-page">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-fields-per-page" aria-expanded="false" aria-controls="collapse-fields-per-page">
+                Reduce the number of fields per page
+              </button>
+            </h2>
+            <div id="collapse-fields-per-page" class="accordion-collapse collapse" aria-labelledby="heading-fields-per-page" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                  The number of fields per page in your form is above average. Consider reducing the number of fields per page to make it easier
+                  for self-represented litigants to complete.
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if word_count_per_page > 140 %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-word-count">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-word-count" aria-expanded="false" aria-controls="collapse-word-count">
+                Reduce the number of words per page
+              </button>
+            </h2>
+            <div id="collapse-word-count" class="accordion-collapse collapse" aria-labelledby="heading-word-count" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                  Your form has an above average number of words per page. When there is too much text on a page, <a href="https://www.nngroup.com/articles/how-little-do-users-read/">litigants will read as little as 20% of the content</a>. 
+                  Make sure the litigant focuses on the right information by keeping the text on each page short.
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-not-detected-yet">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-not-detected-yet" aria-expanded="false" aria-controls="collapse-not-detected-yet">
+                What we can't detect yet
+              </button>
+            </h2>
+          </div>
+          <div id="collapse-not-detected-yet" class="accordion-collapse collapse" aria-labelledby="heading-not-detected-yet" data-bs-target="#collapse-not-detected-yet" aria-expanded="false" aria-controls="collapse-not-detected-yet">
+            <div class="accordion-body">
+              <p>
+                This is an automated tool, and we can't detect everything that makes a form easy to use yet. 
+                Manually review your form for these good practices:
+              </p>
+              <ul>
+                <li>
+                  Give priority to the fields the litigant needs to complete. Place <a href="https://justiceinnovation.law.stanford.edu/evaluating-court-legal-forms/#design">insider information</a> in less prominent places on your form.
+                </li>
+                <li>
+                  Use headings and whitespace to make it easy for the litigant to find important information and to group fields together.
+                </li>
+                <li>
+                  Don't ask questions you do not need the answer to. A <a href="https://www.gov.uk/service-manual/design/form-structure#know-why-youre-asking-every-question">question protocol</a> can help. 
+                  You can also <a href="https://suffolklitlab.org/form-explorer/compare/">see what other states are doing</a> on forms with similar topics.
+                </li>
+                <li>
+                  Especially avoid traumatic questions that are not required or that repeat information you can get from another source.
+                </li>
+                <li>
+                  Consider adding a guided interview for especially complex forms that require litigant choices. Our <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/">free tools</a>
+                  can help.
+                </li>
+                <li>
+                  If your budget and time allow, consider a <a href="https://www.ncsc.org/__data/assets/pdf_file/0017/42722/User-testing.pdf">usability test</a>.
+                  Usability testing can be done with as few as 5 litigants and can help you identify problems with your form that are not detected by automated tools.
+                </li>
+              </ul>
+            </div>
+          </div>
+      </div>   
       </section>
+
+      <section class="pdf-statistics-section mt-4">
+        <div class="container">
+        <div class="row">
+          <h2 class="text-center mt-4">Detailed statistics</h2>
+          <div class="col-md-6">
+            {{ percent_widget("difficult-words", "Percentage of difficult words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
+            </div>
+
+            <div class="col-md-6">
+              {{ percent_widget("passive-voice", "Percent passive voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
+            </div>
+        </div>
+
+        <div class="row">
+
+          <div class="col-md-4">
+          {{ score_position_widget("readability-info","Reading grade level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
+          </div>
+
+          <div class="col-md-4">
+              {{ score_position_widget("citation", "Number of legal citations", 'We recommend leaving citations out of your court form. We measure citations with <a href="https://free.law/projects/eyecite">EyeCite</a>, which often does not capture short form citations to state statutes.', stats.get("citation count"), metric_means["citation count"], metric_stddev["citation count"]) }}
+          </div>
+          
+          <div class="col-md-4">
+            {{ score_position_widget("fields", "Number of fields", "", stats.get("total fields"), metric_means["total fields"], metric_stddev["total fields"]) }}
+          </div>
+
+          <div class="col-md-4">
+            {{ score_position_widget("pages", "Number of pages", "", stats.get("pages"), metric_means["pages"], metric_stddev["pages"]) }}
+          </div>
+
+          <div class="col-md-4">
+            {{ score_position_widget("fields-per-page", "Fields per page", "", stats.get("avg fields per page"), metric_means["avg fields per page"], metric_stddev["avg fields per page"]) }}
+          </div>
+
+          <div class="col-md-4">
+            {{ score_position_widget("word-count", "Words per page", 'Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count around 100 words.', word_count_per_page, 110, 30) }}
+          </div>
+
+          <div class="col-md-4">
+            {{ score_position_widget("sentence-count", "Sentences per page", "", stats.get("sentences per page"), metric_means["sentences per page"], metric_stddev["sentences per page"])}}
+          </div>
+
+        </div>
+        <!-- Legend -->
+        <div class="d-flex mt-3">
+          <div class="legend-item">
+            <div class="legend-color bg-success"></div>
+            <span>Green: 1 standard deviation below the mean</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color bg-warning"></div>
+            <span>Yellow: within 1 standard deviation of the mean</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color bg-danger"></div>
+            <span>Red: more than 1 standard deviation above the mean</span>
+          </div>
+        </div>
+        </div>
+
+        <!-- -->
+        <div class="container">
+        <h2 class="mt-5 mb-4">Field classification</h2>
+
+        <!-- Stacked bar chart -->
+        <div class="bar w-50">
+          <div class="bar-segment bg-success" style="width: {{ stats.get('slotin percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the slotin stat -->
+          <div class="bar-segment bg-secondary" style="width: {{ stats.get('gathered percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the gathered stat -->
+          <div class="bar-segment bg-warning" style="width: {{ stats.get('third party percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the third-party stat -->
+          <div class="bar-segment bg-danger" style="width: {{ stats.get('created percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the created stat -->
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex mt-3">
+          <div class="legend-item">
+            <div class="legend-color bg-success"></div>
+            <span>Slot-in fields: {{ round(stats.get('slotin percent', 0) * 100, 1) }}%</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color bg-secondary"></div>
+            <span>Gathered fields: {{ round(stats.get('gathered percent', 0) * 100, 1) }}%</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color bg-warning"></div>
+            <span>Third-party fields: {{ round(stats.get('third party percent', 0) * 100,1) }}%</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color bg-danger"></div>
+            <span>Created fields: {{ round(stats.get('created percent', 0) * 100, 1) }}%</span>
+          </div>
+        </div>
+        </div>        
+  </div>
+</section>      
