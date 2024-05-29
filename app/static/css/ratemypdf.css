@@ -108,7 +108,15 @@ body {
   height: 230px;
   margin-top: -300px;
   z-index: 2;
-}  
+}
+
+/* Media query for small devices (phones) */
+@media (max-width: 576px) {
+  /* Adjust location of the checkmark image for smaller devices */
+  .checkmark-image {
+    margin-top: -250px;
+  }
+}
 
 /* Custom styles for the footer */
 footer {
