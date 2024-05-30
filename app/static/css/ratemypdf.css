@@ -8,6 +8,9 @@ h1 {
 
 body {
   padding: 0 1em 1em 1em;
+  /* Allow stats color bars to be printable */
+  -webkit-print-color-adjust:exact !important;
+  print-color-adjust:exact !important;
 }
 
 
@@ -115,6 +118,31 @@ body {
   /* Adjust location of the checkmark image for smaller devices */
   .checkmark-image {
     margin-top: -250px;
+  }
+}
+
+/* Media query for printable pages */
+@media print {
+  /* Override the accordion button's collapsed style w/ non-collapsed style */
+  .accordion-button {
+    color: #0c63e4;
+    background-color: #e7f1ff;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
+  }
+  /* Overrides to expand all accordion items */
+  .collapse {
+    display: block!important;
+    height: auto!important;
+  }
+}
+
+/* Workaround to fix a Firefox spacing bug in the first expanded accordion */
+@-moz-document url-prefix() {
+  @media print {
+    .accordion-body {
+      margin-left: 3%;
+      margin-right: 3%;
+    }
   }
 }
 
