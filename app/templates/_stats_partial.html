@@ -166,6 +166,7 @@
                 </p>
                 <p><a href="https://webaim.org/techniques/acrobat/">Read more about making PDFs accessible</a></p>
               </div>
+            </div>
           </div>
           {% endif %}
           {% if stats.get("suggested title") and stats["suggested title"].lower().strip() not in ["abortthisnow.", "apierror"]%}
@@ -363,6 +364,7 @@
                 </p>
               </div>
             </div>
+          </div>
           {% endif %}
           {% if stats.get("total fields", 0) > metric_means["total fields"] + metric_stddev["total fields"] %}
           <div class="accordion-item">
@@ -411,6 +413,30 @@
                   Your form has an above average number of words per page. When there is too much text on a page, <a href="https://www.nngroup.com/articles/how-little-do-users-read/">litigants will read as little as 20% of the content</a>. 
                   Make sure the litigant focuses on the right information by keeping the text on each page short.
                 </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("sensitive fields", []) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-sensitive-fields">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-sensitive-fields" aria-expanded="false" aria-controls="collapse-sensitive-fields">
+                Review and remove sensitive fields
+              </button>
+            </h2>
+            <div id="collapse-sensitive-fields" class="accordion-collapse collapse" aria-labelledby="heading-sensitive-fields" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                The following fields from your PDF reference sensitive information. 
+                Consider removing sensitive fields from the form.
+                </p>
+                <ul>
+                {% for sensitive_field in stats.get("sensitive fields", []) %}
+                <li>
+                  {{ sensitive_field  }}
+                </li>
+                {% endfor %}
+                </ul>
               </div>
             </div>
           </div>
