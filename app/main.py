@@ -34,10 +34,12 @@ queue = Queue(connection=conn)
 
 app = FastAPI()
 
+
 async def set_url_scheme(request: Request, call_next):
     app.url_scheme = request.url.scheme
     response = await call_next(request)
     return response
+
 
 app.middleware("http")(set_url_scheme)
 
@@ -50,7 +52,7 @@ templates = Jinja2Templates(directory="templates")
 templates.env.filters["format_number"] = format_number
 
 SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
-if os.getenv("IN_DOCKER", "False").lower() == "true": 
+if os.getenv("IN_DOCKER", "False").lower() == "true":
     UPLOAD_FOLDER = "/pdf-files"
 else:
     UPLOAD_FOLDER = "/tmp"
@@ -132,7 +134,8 @@ def get_pdf_title_from_hash(file_hash: str) -> str:
             return path_without_extension.replace("-", " ").replace("_", " ")
         else:
             return ""
-        
+
+
 def has_fields(pdf_file: str) -> bool:
     """
     Check if a PDF has at least one form field using PikePDF.
@@ -145,11 +148,12 @@ def has_fields(pdf_file: str) -> bool:
     """
     with pikepdf.open(pdf_file) as pdf:
         for page in pdf.pages:
-            if '/Annots' in page:
-                for annot in page.Annots: # type: ignore
-                    if annot.Type == '/Annot' and annot.Subtype == '/Widget':
+            if "/Annots" in page:
+                for annot in page.Annots:  # type: ignore
+                    if annot.Type == "/Annot" and annot.Subtype == "/Widget":
                         return True
     return False
+
 
 def convert_word_to_pdf(input_file: str, output_file: str, gotenberg_url: str):
     """
@@ -162,16 +166,15 @@ def convert_word_to_pdf(input_file: str, output_file: str, gotenberg_url: str):
 
     Raises:
         Exception: If the conversion fails and returns a non-200 status code.
-    """    
-    gotenberg_url = gotenberg_url + '/forms/libreoffice/convert'
-    with open(input_file, 'rb') as file:
+    """
+    gotenberg_url = gotenberg_url + "/forms/libreoffice/convert"
+    with open(input_file, "rb") as file:
         response = requests.post(
-            gotenberg_url,
-            files={'files': (Path(input_file).name, file)}
+            gotenberg_url, files={"files": (Path(input_file).name, file)}
         )
 
     if response.status_code == 200:
-        with open(output_file, 'wb') as file:
+        with open(output_file, "wb") as file:
             file.write(response.content)
     else:
         raise Exception(f"Conversion failed with status code: {response.status_code}")
@@ -207,28 +210,27 @@ def parse_form_job(
     was_docx = False
     current_job = get_current_job()
     # Check for DOCX uploads. Convert them to PDF
-    if filename.lower().endswith('.doc') or filename.lower().endswith('.docx'):
-        was_docx = True        
-        current_job.meta['status'] = 'converting_word_to_pdf'        
+    if filename.lower().endswith(".doc") or filename.lower().endswith(".docx"):
+        was_docx = True
+        current_job.meta["status"] = "converting_word_to_pdf"
         current_job.save_meta()
         path_without_extension = Path(filename).stem
         convert_word_to_pdf(
             os.path.join(to_path, filename),
-            os.path.join(
-                to_path,
-                path_without_extension + ".pdf"
-            ),
-            os.environ.get('GOTENBERG_URL', 'http://localhost:3000'),
+            os.path.join(to_path, path_without_extension + ".pdf"),
+            os.environ.get("GOTENBERG_URL", "http://localhost:3000"),
         )
         filename = path_without_extension + ".pdf"
 
     # Check for PDF fields
     if was_docx or not has_fields(os.path.join(to_path, filename)):
-        current_job.meta["status"] = 'detecting_pdf_fields'
+        current_job.meta["status"] = "detecting_pdf_fields"
         current_job.save_meta()
-        formfyxer.auto_add_fields(os.path.join(to_path, filename), os.path.join(to_path, filename))
+        formfyxer.auto_add_fields(
+            os.path.join(to_path, filename), os.path.join(to_path, filename)
+        )
 
-    current_job.meta['status'] = 'analyzing_pdf'
+    current_job.meta["status"] = "analyzing_pdf"
     stats = formfyxer.parse_form(
         os.path.join(to_path, filename),
         normalize=True,
@@ -277,18 +279,19 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
             parse_form_job,
             to_path,
             filename,
-            openai_creds= (
+            openai_creds=(
                 {
                     "org": os.environ.get("OPEN_AI__org"),
                     "key": os.environ.get("OPEN_AI__key"),
-                } if os.environ.get("OPEN_AI__org") 
+                }
+                if os.environ.get("OPEN_AI__org")
                 else None
             ),
             spot_token=os.environ.get("SPOT_TOKEN"),
             tools_token=os.environ.get("TOOLS_TOKEN"),
             debug=os.environ.get("RATEMYPDF_DEBUG"),
             job_id=intermediate_dir,
-            job_timeout=600
+            job_timeout=600,
         )
 
         logger.info(f"Started job {job.id}")
@@ -360,13 +363,13 @@ async def get_job_status(request: Request, job_id: str):
             return {"status": "failed"}
 
         if not job.is_finished:
-            if job.meta.get('status') == "converting_word_to_pdf":
+            if job.meta.get("status") == "converting_word_to_pdf":
                 return {"status": "pending", "status_message": "Converting Word to PDF"}
-            if job.meta.get('status') == "detecting_pdf_fields":
+            if job.meta.get("status") == "detecting_pdf_fields":
                 return {"status": "pending", "status_message": "Detecting PDF fields"}
-            if job.meta.get('status') == "analyzing_pdf":
+            if job.meta.get("status") == "analyzing_pdf":
                 return {"status": "pending", "status_message": "Analyzing PDF"}
-                        
+
             return {"status": "pending", "status_message": "Analyzing PDF"}
     except NoSuchJobError:
         pass
@@ -463,6 +466,48 @@ async def get_job_status(request: Request, job_id: str):
 @app.get("/loading_animation", response_class=HTMLResponse)
 async def loading_animation(request: Request):
     return templates.TemplateResponse("loading_animation.html", {"request": request})
+
+
+@app.get("/example_forms.html", response_class=HTMLResponse)
+async def view_stats(request: Request) -> Response:
+    """Shows examples of highly rated forms.
+
+    Returns:
+        TemplateResponse: A response containing the highly rated example forms as an HTML page.
+    """
+    examples = [
+        {
+            "title": "Courts and Lawyers",
+            "description": "Motion to Continue (VT)",
+            "image": "img/thumb1.png",
+            "image_alt": "Thumbnail of Example Court Form #1",
+            "download_link": "https://www.courtformsonline.org/forms/4250d72f88521a1e36cf4de12c839cb6.pdf",
+        },
+        {
+            "title": "Estates, Wills, and Guardianships",
+            "description": "REQUEST TO BE APPOINTED AS CO-PERSONAL REPRESENTATIVE (AK)",
+            "image": "img/thumb2.png",
+            "image_alt": "Thumbnail of Example Court Form #2",
+            "download_link": "https://www.courtformsonline.org/forms/e21e8c015228bf50f945ad623dec1116.pdf",
+        },
+        {
+            "title": "Estates, Wills, and Guardianships #2",
+            "description": "APPLICATION FOR APPOINTMENT AS TEMPORARY PROPERTY CUSTODIAN (AK)",
+            "image": "img/thumb3.png",
+            "image_alt": "Thumbnail of Example Court Form #3",
+            "download_link": "https://www.courtformsonline.org/forms/a0a5bf50b2c7420975ed922631beadcf.pdf",
+        },
+        {
+            "title": "Name Change of a Child",
+            "description": "PUBLICATION NOTICE OF COURT DATE FOR REQUEST FOR NAME CHANGE (MINOR CHILDREN) (IL)",
+            "image": "img/thumb4.png",
+            "image_alt": "Thumbnail of Example Court Form #4",
+            "download_link": "https://www.courtformsonline.org/forms/c4e028ca6967bab9268255de6ad08ab2.pdf",
+        }
+    ]
+    return templates.TemplateResponse(
+        "example_forms.html", {"request": request, "examples": examples}
+    )
 
 
 if __name__ == "__main__":

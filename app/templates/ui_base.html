@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>{% block title %}RateMyPDF{% endblock %}</title>
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/ratemypdf.css') }}">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/checkmark-hand-drawn-outline.svg') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+    integrity="sha512-H+LK6+LavIeTpg6vZwJUZf6I1H6XbNfuvxvquyO+LrG+wAR8BHQWbJwvZTzTwsQ+iTFA9d9t4IZ4ef1OdpJ2hw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/checkmark-hand-drawn-outline.svg') }}">
+</head>
+
+<body>
+  <!-- Header section -->
+  <section class="header-section">
+    <div class="header-text">
+      <h1>{{ title }}</h1>
+      <h2 class="text-break">{{ subtitle }}</h2>
+    </div>
+  </section>
+
+  <section class="main-section">
+    {% block content %}
+    {% endblock %}
+  </section>
+
+  <footer class="bg-light py-3">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p>
+            RateMyPDF is a project of <a href="https://law.suffolk.edu">Suffolk University Law School</a>'s <a
+              href="https://suffolklitlab.org">Legal Innovation and Technology Lab</a>.
+          </p>
+          <p>
+            <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/complexity/complexity">About
+              our score</a>
+            <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Assembly Line</a>
+            <a href="https://suffolklitlab.org">LIT Lab</a>
+            <a href="https://suffolklitlab.org/form-explorer/">Form Explorer</a>
+          </p>
+          <p>Cite this website as: Quinten Steenhuis, Bryce Willey, and David Colarusso. 2023. Beyond Readability with RateMyPDF: A Combined Rule-based and Machine Learning Approach to Improving Court Forms. In <i>Proceedings of International Conference on Artificial Intelligence and Law (ICAIL 2023). ACM, New York, NY, USA, 10 pages</i>. <a href="https://doi.org/10.1145/3594536.3595146">https://doi.org/10.1145/3594536.3595146</a>
+            (<a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/assets/files/Beyond%20Readability%20with%20RateMyPDF-306d8c3ae5c5cb2ff33d436a859d1581.pdf">preprint copy</a>)</p>          
+        </div>
+      </div>
+    </div>
+    <!-- feedback badge -->
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSeopUdqKXl6vICaR2D_bUiHYLo-6RhBQJuGgfWd99R9mEFrCg/viewform?usp=sf_link"><img src="https://img.shields.io/badge/feedback-please!-blue" alt="feedback badge"></a>
+  </footer>
+  <!-- Bootstrap 5 JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

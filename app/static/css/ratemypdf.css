@@ -49,15 +49,15 @@ body {
 }
 
 /* Custom color for the cards */
-.card:nth-child(1) {
+.col-md-4:nth-child(1) .card {
   background-color: #ffc107;
 }
 
-.card:nth-child(2) {
+.col-md-4:nth-child(2) .card {
   background-color: #28a745;
 }
 
-.card:nth-child(3) {
+.col-md-4:nth-child(3) .card {
   background-color: #007bff;
 }
 
@@ -428,3 +428,22 @@ font-weight: bold;
 .highlight:hover {
   background-color: rgba(255, 243, 128, 1);
 }
+
+/* Styles for Example Form Cards if we want */
+.example-form-card {
+  background-color: #ffc107;
+}
+
+/*
+.col:nth-child(1n) .example-form-card {
+  background-color: #ffc107;
+}
+
+.col:nth-child(2n) .example-form-card {
+  background-color: #28a745;
+}
+
+.col:nth-child(3n) .example-form-card {
+  background-color: #007bff;
+}
+*/
