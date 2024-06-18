@@ -417,23 +417,28 @@
             </div>
           </div>
           {% endif %}
-          {% if stats.get("sensitive fields", []) %}
+          {% if stats.get("sensitive data types", []) %}
           <div class="accordion-item">
-            <h2 class="accordion-header" id="heading-sensitive-fields">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-sensitive-fields" aria-expanded="false" aria-controls="collapse-sensitive-fields">
-                Review and remove sensitive fields
+            <h2 class="accordion-header" id="heading-sensitive-data-types">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-sensitive-data-types" aria-expanded="false" aria-controls="collapse-sensitive-data-types">
+                Review and remove sensitive data types
               </button>
             </h2>
-            <div id="collapse-sensitive-fields" class="accordion-collapse collapse" aria-labelledby="heading-sensitive-fields" data-bs-parent="#suggestionsAccordion">
+            <div id="collapse-sensitive-data-types" class="accordion-collapse collapse" aria-labelledby="heading-sensitive-data-types" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
                 <p>
                 The following fields from your PDF reference sensitive information. 
-                Consider removing sensitive fields from the form.
+                Consider removing sensitive data types from the form.
                 </p>
                 <ul>
-                {% for sensitive_field in stats.get("sensitive fields", []) %}
+                {% for sensitive_data_type, sensitive_fields in stats.get("sensitive data types", {}).items() %}
                 <li>
-                  {{ sensitive_field  }}
+                  {{ sensitive_data_type }}
+                  <ul>
+                  {% for sensitive_field in sensitive_fields %}
+                    <li>{{ sensitive_field }}</li>
+                  {% endfor %}
+                  </ul>
                 </li>
                 {% endfor %}
                 </ul>
