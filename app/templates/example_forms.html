@@ -1,0 +1,24 @@
+{% set title = "Example Forms" %}
+{% set subtitle = "Highly rated forms that you can reference and learn from." %}
+{% extends "ui_base.html" %}
+
+{% block title %}RateMyPDF - Example Forms{% endblock %}
+
+{% block header_section %}
+    <h1>Rate My PDF</h1>
+
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row mt-2 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
+    {% for example in examples %}
+        {% with title=example["title"], download_link=example["download_link"], image=url_for('static', path=example["image"]), image_alt=example["image_alt"], description=example["description"], download_link=example["download_link"] %}
+            <div class="col">
+                {% include "_example_form_card.html" %}
+            </div>
+        {% endwith %}
+    {% endfor %}
+        </div>
+    </div>
+{% endblock %}
