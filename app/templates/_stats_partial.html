@@ -1,3 +1,6 @@
+{# Can update this to be passed in if we add a UI checkbox later. #}
+{# Currently not toggle-able, but should be easy enough to change in the future. #}
+{% set instructions_only = stats.get("total fields") == 0 %}
 {% macro percent_widget(label, title, description, val, mean, std_dev) -%}
 <div class="mb-3">
   <h4>{{ title }}
@@ -75,7 +78,7 @@
       
       <section class="pdf-statistics-section">
         <div class="container">
-          <div class="row">
+          <div class="row{% if instructions_only %} hidden{% endif %}">
             <div class="col-md-12 text-center">
               <h2>Complexity index</h2>
               <div class="d-flex justify-content-center">
@@ -84,7 +87,7 @@
               <p>The complexity index is a weighted composite of the individual scores below. Higher scores are more complex. The average form scores about {{ metric_means["complexity score"] | int }}. <a href="../example_forms.html">Here are some examples of highly rated forms.</a></a></p>
             </div>
           </div>
-          <div class="row"> <!-- Begin time to answer -->
+          <div class="row{% if instructions_only %} hidden{% endif %}"> <!-- Begin time to answer -->
             
             <div class="col-md-12 text-center">
               <div class="container">
@@ -510,7 +513,7 @@
               {{ score_position_widget("citation", "Number of legal citations", 'We recommend leaving citations out of your court form. We measure citations with <a href="https://free.law/projects/eyecite">EyeCite</a>, which often does not capture short form citations to state statutes.', stats.get("citation count"), metric_means["citation count"], metric_stddev["citation count"]) }}
           </div>
           
-          <div class="col-md-4">
+          <div class="col-md-4{% if instructions_only %} hidden{% endif %}">
             {{ score_position_widget("fields", "Number of fields", "", stats.get("total fields"), metric_means["total fields"], metric_stddev["total fields"]) }}
           </div>
 
@@ -518,7 +521,7 @@
             {{ score_position_widget("pages", "Number of pages", "", stats.get("pages"), metric_means["pages"], metric_stddev["pages"]) }}
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-4{% if instructions_only %} hidden{% endif %}">
             {{ score_position_widget("fields-per-page", "Fields per page", "", stats.get("avg fields per page"), metric_means["avg fields per page"], metric_stddev["avg fields per page"]) }}
           </div>
 
@@ -549,7 +552,7 @@
         </div>
 
         <!-- -->
-        <div class="container">
+        <div class="container{% if instructions_only %} hidden{% endif %}">
         <h2 class="mt-5 mb-4">Field classification</h2>
 
         <!-- Stacked bar chart -->

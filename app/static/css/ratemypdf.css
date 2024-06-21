@@ -447,3 +447,7 @@ font-weight: bold;
   background-color: #007bff;
 }
 */
+
+.hidden {
+  display: none;
+}
