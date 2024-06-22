@@ -469,7 +469,7 @@ async def loading_animation(request: Request):
 
 
 @app.get("/example_forms.html", response_class=HTMLResponse)
-async def view_stats(request: Request) -> Response:
+async def view_examples(request: Request) -> Response:
     """Shows examples of highly rated forms.
 
     Returns:
