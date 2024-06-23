@@ -449,6 +449,22 @@
             </div>
           </div>
           {% endif %}
+          {% if stats.get("non english text detected", []) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-non-english-text-detected">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-non-english-text-detected" aria-expanded="false" aria-controls="collapse-non-english-text-detected">
+                Non-English text found
+              </button>
+            </h2>
+            <div id="collapse-non-english-text-detected" class="accordion-collapse collapse" aria-labelledby="heading-non-english-text-detected" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <p>
+                We are unable to rate non-English text. {{ "{:.1%}".format(stats.get("non english percentage")) }} of the source was skipped.
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading-not-detected-yet">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-not-detected-yet" aria-expanded="false" aria-controls="collapse-not-detected-yet">
