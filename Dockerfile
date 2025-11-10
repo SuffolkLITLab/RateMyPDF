@@ -4,8 +4,7 @@ FROM python:3.12-slim
 # Install necessary system dependencies for OpenCV and libgthread
 RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils libgl1 libglib2.0-0 git \
-    build-essential \
-    supervisor \
+  build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory to /app
@@ -15,8 +14,7 @@ WORKDIR /app
 COPY . /app
 COPY ./app /app
 
-# Add supervisor configuration to run web and worker in one machine
-COPY supervisord.conf /app/supervisord.conf
+# The image runs the web process by default; workers should be run separately
 
 # Install any needed packages specified in requirements.txt
 
@@ -31,12 +29,12 @@ RUN mkdir -p /wheels && \
       -r requirements.txt -d /wheels && \
     python -m pip install --no-cache-dir --no-index --find-links=/wheels \
       -r requirements.txt
-      
+
 # Make port 80 available to the world outside this container
 EXPOSE 80
 
 # Define environment variable
 ENV NAME World
 
-# Run app.py when the container launches
-CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
+# Run uvicorn when the container launches (web process only)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers", "--forwarded-allow-ips", "*"]
