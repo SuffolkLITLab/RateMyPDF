@@ -4,6 +4,7 @@ services:
   web:
     build: .
     container_name: ratemypdf_web
+    restart: unless-stopped
     depends_on:
       - redis
     volumes:
@@ -24,16 +25,33 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=myresolver"
       - "traefik.http.routers.api.service=api@internal"
+      - "autoheal=true"
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost/healthz', timeout=2).getcode()==200 else 1)\" "]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   redis:
     image: redis:alpine
     container_name: ratemypdf_redis
+    restart: unless-stopped
+    labels:
+      - "autoheal=true"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   worker:
     build: .
     container_name: ratemypdf_worker
+    restart: unless-stopped
     command: rq worker
     depends_on:
       - redis
@@ -43,22 +61,41 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
+    labels:
+      - "autoheal=true"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os,sys,redis; r=redis.from_url(os.getenv('REDIS_URL','redis://redis:6379/0')); sys.exit(0 if r.ping() else 1)\" "]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
       
 
   gotenberg:
     image: gotenberg/gotenberg:7
     container_name: ratemypdf_gotenberg
+    restart: unless-stopped
+    labels:
+      - "autoheal=true"
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/health > /dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   traefik:
     image: traefik:v2.5
     container_name: ratemypdf_traefik
+    restart: unless-stopped
     labels: 
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"    
     command:
       - "--api.insecure=true"
+      - "--ping=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -75,6 +112,15 @@ services:
       - "./letsencrypt:/letsencrypt"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
+
+  autoheal:
+    image: willfarrell/autoheal
+    container_name: ratemypdf_autoheal
+    restart: unless-stopped
+    environment:
+      - AUTOHEAL_INTERVAL=5
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
 volumes:
   pdf-files:

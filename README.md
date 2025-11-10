@@ -10,7 +10,7 @@ of ICAIL '23. You can view it [here](https://suffolklitlab.org/docassemble-Assem
 
 Install requirements:
 
-- FormFyxer. You will need the version from GitHub. git+https://github.com/SuffolkLITLab/FormFyxer.git
+- formfyxer
 - redis. Follow install install instructions here: https://redis.io/docs/getting-started/installation/install-redis-on-linux/
 - rq: pip install rq
 
@@ -40,7 +40,6 @@ DOMAIN=ratemypdf.com
 OPEN_AI__org=org-
 OPEN_AI__key=sk-
 SPOT_TOKEN=
-SECRET_KEY=
 TOOLS_TOKEN=
 IN_DOCKER=TRUE
 REDIS_URL=redis://ratemypdf_redis:6379

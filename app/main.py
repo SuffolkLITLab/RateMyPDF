@@ -61,6 +61,12 @@ ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+@app.get("/healthz")
+async def healthz():
+    """Simple health endpoint for container healthchecks."""
+    return {"status": "ok"}
+
+
 def allowed_file(filename: str) -> bool:
     """Check if the given file has an allowed extension.
 
