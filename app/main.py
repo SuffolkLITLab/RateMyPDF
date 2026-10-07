@@ -25,6 +25,7 @@ import pikepdf
 import formfyxer
 from formfyxer import lit_explorer
 from worker import conn
+from limits import UploadLimitMiddleware, MAX_UPLOAD_BYTES, JOB_TIMEOUT
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 queue = Queue(connection=conn)
 
 app = FastAPI()
+app.add_middleware(UploadLimitMiddleware)
 
 
 async def set_url_scheme(request: Request, call_next):
@@ -120,6 +122,8 @@ def highlight_text(
 
 def get_pdf_from_dir(file_hash):
     path_to_dir = os.path.join(UPLOAD_FOLDER, file_hash)
+    if not os.path.isdir(path_to_dir):
+        return None
     for f in os.listdir(path_to_dir):
         if f.endswith(".pdf"):
             return f
@@ -176,22 +180,31 @@ def convert_word_to_pdf(input_file: str, output_file: str, gotenberg_url: str):
     gotenberg_url = gotenberg_url + "/forms/libreoffice/convert"
     with open(input_file, "rb") as file:
         response = requests.post(
-            gotenberg_url, files={"files": (Path(input_file).name, file)}
+            gotenberg_url, files={"files": (Path(input_file).name, file)},
+            timeout=(5, 60), stream=True
         )
 
     if response.status_code == 200:
         with open(output_file, "wb") as file:
-            file.write(response.content)
+            size = 0
+            try:
+                for chunk in response.iter_content(64 * 1024):
+                    size += len(chunk)
+                    if size > MAX_UPLOAD_BYTES:
+                        raise ValueError("Converted PDF exceeds the upload limit")
+                    file.write(chunk)
+            finally:
+                response.close()
     else:
         raise Exception(f"Conversion failed with status code: {response.status_code}")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def upload_file(request: Request):
-    return templates.TemplateResponse("ratemypdf.html", {"request": request})
+    return templates.TemplateResponse("ratemypdf.html", {"request": request, "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024)})
 
 
-@job("default", connection=conn, timeout=360)
+@job("default", connection=conn, timeout=JOB_TIMEOUT)
 def parse_form_job(
     to_path: str,
     filename: str,
@@ -237,6 +250,7 @@ def parse_form_job(
         )
 
     current_job.meta["status"] = "analyzing_pdf"
+    current_job.save_meta()
     stats = formfyxer.parse_form(
         os.path.join(to_path, filename),
         normalize=True,
@@ -263,8 +277,15 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No file selected")
     if file and file.filename and allowed_file(file.filename):
-        filename = file.filename
-        file_content = await file.read()
+        filename = Path(file.filename.replace("\\", "/")).name
+        if filename in {"", ".", ".."}:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        file_content = await file.read(MAX_UPLOAD_BYTES + 1)
+        await file.close()
+        if len(file_content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the upload limit")
+        if not file_content:
+            raise HTTPException(status_code=400, detail="The file is empty")
         intermediate_dir = str(sha256(file_content).hexdigest())
         to_path = os.path.join(UPLOAD_FOLDER, intermediate_dir)
         if os.path.isdir(to_path):
@@ -297,7 +318,9 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
             tools_token=os.environ.get("TOOLS_TOKEN"),
             debug=os.environ.get("RATEMYPDF_DEBUG"),
             job_id=intermediate_dir,
-            job_timeout=600,
+            job_timeout=JOB_TIMEOUT,
+            result_ttl=3600,
+            failure_ttl=3600,
         )
 
         logger.info(f"Started job {job.id}")
@@ -362,6 +385,8 @@ async def view_stats(request: Request, file_hash: str) -> Response:
 
 @app.get("/job-status/{job_id}")
 async def get_job_status(request: Request, job_id: str):
+    if not valid_hash(job_id):
+        raise HTTPException(status_code=400, detail="Invalid job ID")
     try:
         job = rq.job.Job.fetch(job_id, connection=conn)
 
@@ -387,9 +412,9 @@ async def get_job_status(request: Request, job_id: str):
     stats_file_path = os.path.join(stats_path, "stats.json")
     if os.path.isdir(stats_path):
         if not os.path.isfile(stats_file_path):
-            return {"status": "stats file missing"}
+            return {"status": "failed", "status_message": "Results are unavailable. Please upload again."}
     else:
-        return {"status": "directory missing"}
+        return {"status": "failed", "status_message": "Results are unavailable. Please upload again."}
 
     with open(stats_file_path, "r") as stats_file:
         stats = json.loads(stats_file.read())

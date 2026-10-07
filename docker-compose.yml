@@ -52,6 +52,9 @@ services:
     build: .
     container_name: ratemypdf_worker
     restart: unless-stopped
+    cpus: "0.50"
+    mem_limit: 768m
+    memswap_limit: 768m
     command: rq worker
     depends_on:
       - redis
@@ -73,12 +76,13 @@ services:
 
   gotenberg:
     image: gotenberg/gotenberg:7
+    cpus: "0.25"
+    mem_limit: 384m
+    memswap_limit: 384m
     container_name: ratemypdf_gotenberg
     restart: unless-stopped
     labels:
       - "autoheal=true"
-    ports:
-      - "3000:3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/health > /dev/null 2>&1 || exit 1"]
       interval: 30s
