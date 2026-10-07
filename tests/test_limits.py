@@ -8,14 +8,14 @@ from starlette.exceptions import HTTPException
 def test_oversize_file_does_not_enqueue(web, monkeypatch):
     main, client = web
     monkeypatch.setattr(main, "MAX_UPLOAD_BYTES", 4)
-    response = client.post("/", files={"file": ("big.pdf", b"12345")})
+    response = client.post("/", data={"terms_version": main.TERMS_VERSION}, files={"file": ("big.pdf", b"12345")})
     assert response.status_code == 413
     main.queue.enqueue.assert_not_called()
 
 
 def test_filename_and_timeout(web):
     main, client = web
-    response = client.post("/", files={"file": ("../../escape.pdf", b"pdf")}, follow_redirects=False)
+    response = client.post("/", data={"terms_version": main.TERMS_VERSION}, files={"file": ("../../escape.pdf", b"pdf")}, follow_redirects=False)
     assert response.status_code == 303
     args, kwargs = main.queue.enqueue.call_args
     assert args[2] == "escape.pdf"
