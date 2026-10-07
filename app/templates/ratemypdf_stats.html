@@ -23,32 +23,40 @@
   <script>
     const fileHash = "{{ file_hash }}";
 
-    async function checkJobStatus() {
-      const response = await fetch(`/job-status/${fileHash}`);
-      const data = await response.json();
-    
-      if (data.status === "finished") {
-        // Update the page with the rendered stats
-        document.getElementById("stats-container").innerHTML = data.rendered_stats;
-        loadGaugeChart(parseFloat(document.getElementById("complexity-score").value), parseFloat(document.getElementById("complexity-mean").value), parseFloat(document.getElementById("complexity-stddev").value));
-        return;
-      }
-    
-      if (data.status === "failed") {
-        // Handle job failure
-        alert("Failed to process the file.");
-        return;
-      }
-    
-      if (data.status === "pending" && data.status_message) {
-        // Update the status message in the loading animation iframe
-        document.getElementById("loading-animation").contentWindow.document.getElementById("status-message").innerHTML = data.status_message;
-      }
-    
-      // If the job is still pending, check the status again after a delay
-      setTimeout(checkJobStatus, 1000);
+    let attempts = 0;
+    function showFailure(message) {
+      document.getElementById("stats-container").textContent = message;
     }
-    
+    async function checkJobStatus() {
+      if (++attempts > 120) {
+        showFailure("Processing is taking too long. Reload this page later to check the result.");
+        return;
+      }
+      try {
+        const response = await fetch(`/job-status/${fileHash}`, {signal: AbortSignal.timeout(10000)});
+        if (!response.ok) throw new Error("Status unavailable");
+        const data = await response.json();
+        if (data.status === "finished") {
+          document.getElementById("stats-container").innerHTML = data.rendered_stats;
+          loadGaugeChart(parseFloat(document.getElementById("complexity-score").value), parseFloat(document.getElementById("complexity-mean").value), parseFloat(document.getElementById("complexity-stddev").value));
+          return;
+        }
+        if (data.status !== "pending") {
+          showFailure(data.status_message || "Unable to process this file. Try a smaller document.");
+          return;
+        }
+        const frame = document.getElementById("loading-animation");
+        const message = frame?.contentDocument?.getElementById("status-message");
+        if (message) message.textContent = data.status_message;
+      } catch (error) {
+        if (attempts >= 5) {
+          showFailure("Unable to reach the server. Please reload this page later.");
+          return;
+        }
+      }
+      setTimeout(checkJobStatus, Math.min(1000 * attempts, 10000));
+    }
+
     // Start checking the job status when the page loads
     window.addEventListener("load", checkJobStatus);
   </script>

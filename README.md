@@ -59,3 +59,32 @@ Bibtex format:
 ```bibtex
 @article{Steenhuis_Willey_Colarusso_2023, title={Beyond Readability with RateMyPDF: A Combined Rule-based and Machine Learning Approach to Improving Court Forms}, DOI={https://doi.org/10.1145/3594536.3595146}, journal={Proceedings of International Conference on Artificial Intelligence and Law (ICAIL 2023)}, author={Steenhuis, Quinten and Willey, Bryce and Colarusso, David}, year={2023}, pages={287–296}}
 ```
+
+## Processing limits and incident #44
+
+Uploads default to 20 MiB (`MAX_UPLOAD_BYTES=20971520`); multipart requests get
+1 MiB of additional framing allowance. Both declared and streamed request sizes
+are checked before parsing completes. Converted PDFs have the same file limit.
+RQ jobs default to a hard 180-second timeout (`JOB_TIMEOUT=180`), including
+conversion and field detection. Set these variables identically on web and worker.
+Failed and completed job records expire after one hour; document files currently
+remain on the shared volume.
+
+Compose caps the worker at 0.50 CPU / 768 MiB and Gotenberg at 0.25 CPU / 384 MiB,
+with no additional swap allowance. These defaults leave headroom on the reported
+1-vCPU / 2-GiB host, but complex documents may fail within these budgets. Review
+container OOM events, disk usage, queue depth and Lightsail CPU credits after
+recreating containers with `docker compose up -d --build`. A larger instance is
+an operator decision; these changes do not resize or deploy production. CPU caps
+reduce contention but do not guarantee sustained load fits a burstable baseline.
+Gotenberg is accessible only inside the Compose network.
+
+Run the focused regression suite without downloading FormFyxer models:
+
+```sh
+pip install -r requirements.txt pytest httpx
+pytest -q
+```
+
+The web-boundary tests stub FormFyxer and queue submission; they do not exercise
+paid APIs or production infrastructure.
