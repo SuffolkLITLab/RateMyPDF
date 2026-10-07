@@ -253,7 +253,7 @@
                   {% for suggestion in stats.get("plain language suggestions", []) %}
                   <tr>
                     <td>
-                      {{ suggestion[0] | safe }}
+                      {{ suggestion[0] }}
                     </td>
                     <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
                   </tr>
@@ -289,7 +289,7 @@
                 {% for suggestion in stats.get("neutral gender suggestions", []) %}
                 <tr>
                   <td>
-                    {{ suggestion[0] | safe }}
+                    {{ suggestion[0] }}
                   </td>
                   <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
                 </tr>
