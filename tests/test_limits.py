@@ -66,3 +66,25 @@ def test_conversion_limit(web, monkeypatch, tmp_path):
         main.convert_word_to_pdf(str(source), str(tmp_path / "output.pdf"), "http://converter")
     response.close.assert_called_once()
     assert main.requests.post.call_args.kwargs["timeout"] == (5, 60)
+
+
+def test_conversion_failure_gives_retry_and_pdf_alternative(web, monkeypatch):
+    main, client = web
+    job = Mock(is_failed=True, meta={"status": "converting_word_to_pdf"})
+    monkeypatch.setattr(main.rq.job.Job, "fetch", Mock(return_value=job))
+    response = client.get("/job-status/" + "a" * 64)
+    assert response.json() == {
+        "status": "failed",
+        "status_message": "We couldn't convert your Word document to PDF. Please try uploading it again, or save it as a PDF and upload the PDF instead.",
+    }
+    main.queue.enqueue.assert_not_called()
+
+
+def test_analysis_failure_does_not_claim_conversion_failed(web, monkeypatch):
+    main, client = web
+    job = Mock(is_failed=True, meta={"status": "analyzing_pdf"})
+    monkeypatch.setattr(main.rq.job.Job, "fetch", Mock(return_value=job))
+    data = client.get("/job-status/" + "b" * 64).json()
+    assert data["status"] == "failed"
+    assert "try uploading it again" in data["status_message"]
+    assert "convert" not in data["status_message"]

@@ -404,7 +404,17 @@ async def get_job_status(request: Request, job_id: str):
         job = rq.job.Job.fetch(job_id, connection=conn)
 
         if job.is_failed:
-            return {"status": "failed"}
+            if job.meta.get("status") == "converting_word_to_pdf":
+                message = (
+                    "We couldn't convert your Word document to PDF. "
+                    "Please try uploading it again, or save it as a PDF and upload the PDF instead."
+                )
+            else:
+                message = (
+                    "We couldn't process your document. Please try uploading it again. "
+                    "If the problem continues, try a smaller document."
+                )
+            return {"status": "failed", "status_message": message}
 
         if not job.is_finished:
             if job.meta.get("status") == "converting_word_to_pdf":
