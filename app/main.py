@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 from hashlib import sha256
+from html import escape
 from typing import Tuple, Union, List
 
 import logging
@@ -110,13 +111,15 @@ def highlight_text(
     prev_end = 0
 
     for start, end in sorted(ranges):
-        output.append(text[prev_end:start])
-        output.append(f'<span class="{class_name}">')
-        output.append(text[start:end])
+        start = max(prev_end, min(len(text), start))
+        end = max(start, min(len(text), end))
+        output.append(escape(text[prev_end:start]))
+        output.append(f'<span class="{escape(class_name, quote=True)}">')
+        output.append(escape(text[start:end]))
         output.append("</span>")
         prev_end = end
 
-    output.append(text[prev_end:])
+    output.append(escape(text[prev_end:]))
     return "".join(output)
 
 
@@ -131,19 +134,17 @@ def get_pdf_from_dir(file_hash):
 
 
 def get_pdf_title_from_hash(file_hash: str) -> str:
-    f = get_pdf_from_dir(file_hash)
+    filename = get_pdf_from_dir(file_hash)
+    if not filename:
+        return ""
     try:
-        the_pdf = pikepdf.open(f)
-        if hasattr(the_pdf.docinfo, "Title"):
-            title = str(the_pdf.docinfo.Title)
-        the_pdf.close()
-        return title
-    except:
-        if f:
-            path_without_extension = Path(f).stem
-            return path_without_extension.replace("-", " ").replace("_", " ")
-        else:
-            return ""
+        with pikepdf.open(os.path.join(UPLOAD_FOLDER, file_hash, filename)) as pdf:
+            title = pdf.docinfo.get("/Title")
+            if title:
+                return str(title)
+    except (pikepdf.PdfError, OSError):
+        pass
+    return Path(filename).stem.replace("-", " ").replace("_", " ")
 
 
 def has_fields(pdf_file: str) -> bool:
@@ -158,10 +159,13 @@ def has_fields(pdf_file: str) -> bool:
     """
     with pikepdf.open(pdf_file) as pdf:
         for page in pdf.pages:
-            if "/Annots" in page:
-                for annot in page.Annots:  # type: ignore
-                    if annot.Type == "/Annot" and annot.Subtype == "/Widget":
-                        return True
+            annotations = page.get("/Annots", [])
+            if not isinstance(annotations, (pikepdf.Array, list)):
+                continue
+            for annot in annotations:
+                # /Type is optional. Ignore malformed entries and non-widget annotations.
+                if isinstance(annot, pikepdf.Dictionary) and annot.get("/Subtype") == "/Widget":
+                    return True
     return False
 
 
