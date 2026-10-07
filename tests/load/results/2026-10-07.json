@@ -1,0 +1,955 @@
+{
+  "date": "2026-10-07",
+  "code": {
+    "stack_commits": [
+      "a75420f",
+      "463e4ec",
+      "584c48c",
+      "89a8d52"
+    ],
+    "additional_fix": "opencv-python<5 and opencv-python-headless<5"
+  },
+  "environment": {
+    "host_cpus": 8,
+    "host_memory_bytes": 16540467200,
+    "worker_cpus": 0.5,
+    "worker_memory_mib": 768,
+    "converter_cpus": 0.25,
+    "converter_memory_mib": 384,
+    "job_timeout_seconds": 180,
+    "upload_limit_bytes": 20971520,
+    "single_cpu_profiles": "web, worker, Redis and Gotenberg pinned to logical CPU 0; simulated remote API outside cpuset"
+  },
+  "limitations": [
+    "Synthetic text forms; not representative of all real documents or scans.",
+    "OpenAI responses simulated; no live API accuracy, context limits, rate limits or pricing tested.",
+    "No SPOT or Tools credentials supplied.",
+    "HTTP client polls every 2 seconds; browser backoff can add up to roughly 10 seconds to visible completion.",
+    "No Traefik/TLS/browser automation or Lightsail burst-credit/whole-host 2 GiB simulation.",
+    "Latency quantiles are descriptive for small samples, not capacity guarantees.",
+    "Cleanup tested separately with real Redis and running during the slow-API run; CPU-contention sweeps preceded its addition."
+  ],
+  "findings": [
+    "Initial full-stack run failed: missing API credentials and OpenCV 5 missing groupRectangles.",
+    "OpenCV <5 restored field detection and Word analysis.",
+    "50-page PDF reached the hard timeout at about 180 seconds; next upload completed.",
+    "One of eight mixed-load jobs failed: Gotenberg 7.10.2 LibreOffice segmentation fault, HTTP 500; no cgroup OOM events. Two follow-up Word conversions succeeded.",
+    "No health probe failures in measured profiles; no observed container restarts or OOM kills.",
+    "One-page form makes 40 simulated API calls: 50.2-second completion at 1 second/call."
+  ],
+  "cleanup_validation": {
+    "unit_suite": "31 passed",
+    "live_dry_run_candidates": 1,
+    "expired_upload_deleted": true,
+    "queued_upload_preserved": true,
+    "after_terminal_status_upload_deleted": true,
+    "next_scheduled_run": "2026-10-11T03:00:00+00:00",
+    "production_deployed": false
+  },
+  "resources": {
+    "baseline": {
+      "ratemypdf-bench-web-1": {
+        "max_mib": 314.9,
+        "max_cpu_percent": 52.13
+      },
+      "ratemypdf-bench-worker-1": {
+        "max_mib": 439.7,
+        "max_cpu_percent": 56.06
+      },
+      "ratemypdf-bench-gotenberg-1": {
+        "max_mib": 126.7,
+        "max_cpu_percent": 12.4
+      },
+      "ratemypdf-bench-redis-1": {
+        "max_mib": 23.8,
+        "max_cpu_percent": 5.32
+      }
+    },
+    "single_cpu": {
+      "ratemypdf-bench-web-1": {
+        "max_mib": 319.9,
+        "max_cpu_percent": 46.05
+      },
+      "ratemypdf-bench-worker-1": {
+        "max_mib": 449.0,
+        "max_cpu_percent": 54.88
+      },
+      "ratemypdf-bench-gotenberg-1": {
+        "max_mib": 158.9,
+        "max_cpu_percent": 26.36
+      },
+      "ratemypdf-bench-redis-1": {
+        "max_mib": 6.418,
+        "max_cpu_percent": 0.51
+      }
+    },
+    "cleanup_idle": {
+      "ratemypdf-bench-cleanup-1": {
+        "max_mib": 27.24,
+        "max_cpu_percent": 0
+      }
+    }
+  },
+  "profiles": {
+    "initial": {
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 1,
+      "wall_seconds": 36.499,
+      "results": [
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.029
+            },
+            {
+              "stage": "failed",
+              "seconds": 8.056
+            }
+          ],
+          "upload_seconds": 0.01366899300046498,
+          "upload_status": 303,
+          "job_id": "29bfa635b622cff60b7c7ce02479decc54a9f287e9f0e670924f80261e4ff389",
+          "view_status": 200,
+          "outcome": "failed",
+          "total_seconds": 8.056
+        },
+        {
+          "case": "unfielded",
+          "bytes": 1507,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.009
+            },
+            {
+              "stage": "failed",
+              "seconds": 6.03
+            }
+          ],
+          "upload_seconds": 0.0034487350003473694,
+          "upload_status": 303,
+          "job_id": "802981459605c9127ebaeab29696ddf062faad717f3c2947a375cdb9ae77fc84",
+          "view_status": 200,
+          "outcome": "failed",
+          "total_seconds": 6.03
+        },
+        {
+          "case": "word",
+          "bytes": 36702,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.019
+            },
+            {
+              "stage": "Converting Word to PDF",
+              "seconds": 6.038
+            },
+            {
+              "stage": "failed",
+              "seconds": 22.099
+            }
+          ],
+          "upload_seconds": 0.008248455998909776,
+          "upload_status": 303,
+          "job_id": "837a6497c42d8c5173d3aa9bb9612ac097f2e6fce45b4b6a509c86e533ed62f2",
+          "view_status": 200,
+          "outcome": "failed",
+          "total_seconds": 22.099
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 72,
+        "p50": 0.002,
+        "p95": 0.006,
+        "max": 0.036
+      },
+      "health_errors": [],
+      "successful_total_seconds": {}
+    },
+    "baseline": {
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 1,
+      "wall_seconds": 335.15,
+      "results": [
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.029
+            },
+            {
+              "stage": "finished",
+              "seconds": 15.24
+            }
+          ],
+          "upload_seconds": 0.017818186001022696,
+          "upload_status": 303,
+          "job_id": "42c6ac272a3544da0ee2705d2d25aa46a251d63646cbde0a1ffff5ef780c190d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 15.245
+        },
+        {
+          "case": "unfielded",
+          "bytes": 1507,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.008
+            },
+            {
+              "stage": "Detecting PDF fields",
+              "seconds": 8.033
+            },
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 14.059
+            },
+            {
+              "stage": "finished",
+              "seconds": 22.082
+            }
+          ],
+          "upload_seconds": 0.0032127220001711976,
+          "upload_status": 303,
+          "job_id": "a8d979070233bf5c80dc0ca893244286e93cb0dc131ddbf11c72b3c339ece86d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 27340,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 22.084
+        },
+        {
+          "case": "word",
+          "bytes": 36702,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.008
+            },
+            {
+              "stage": "Detecting PDF fields",
+              "seconds": 6.023
+            },
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 10.032
+            },
+            {
+              "stage": "finished",
+              "seconds": 20.061
+            }
+          ],
+          "upload_seconds": 0.0035584069992182776,
+          "upload_status": 303,
+          "job_id": "11a4d7e8b16f4d8838bdde3c9c788cb03a336bf125807130196a2dae61a66926",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26003,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 20.064
+        },
+        {
+          "case": "medium",
+          "bytes": 16184,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.013
+            },
+            {
+              "stage": "finished",
+              "seconds": 62.19
+            }
+          ],
+          "upload_seconds": 0.005921604000832303,
+          "upload_status": 303,
+          "job_id": "a39e6ae3a687852fe62d417aebeab42467225ec08a789b5021dcc128101e8b20",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 60078,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 62.195
+        },
+        {
+          "case": "large",
+          "bytes": 71708,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.012
+            },
+            {
+              "stage": "failed",
+              "seconds": 180.663
+            }
+          ],
+          "upload_seconds": 0.004642227999283932,
+          "upload_status": 303,
+          "job_id": "4a186ec10cac3b58b782d5ce54a878d94d272b0074fd709ddd02943acb2955b8",
+          "view_status": 200,
+          "outcome": "failed",
+          "total_seconds": 180.663
+        },
+        {
+          "case": "boundary",
+          "bytes": 20971520,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.543
+            },
+            {
+              "stage": "finished",
+              "seconds": 34.684
+            }
+          ],
+          "upload_seconds": 0.13771368199923018,
+          "upload_status": 303,
+          "job_id": "4080dbca20511e1d6d4b97864fa9ff39ba0dc03a1c19fc28e7b2535ebc03f2dd",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 34.791
+        },
+        {
+          "case": "oversize",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.02978809500018542,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large or has an invalid length.\"}",
+          "total_seconds": 0.03
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 661,
+        "p50": 0.003,
+        "p95": 0.006,
+        "max": 1.095
+      },
+      "health_errors": [],
+      "successful_total_seconds": {
+        "count": 5,
+        "p50": 22.084,
+        "p95": 62.195,
+        "max": 62.195
+      },
+      "simulated_api": {
+        "delay_seconds": 0.05,
+        "calls": 2385
+      }
+    },
+    "rejections": {
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 4,
+      "wall_seconds": 0.61,
+      "results": [
+        {
+          "case": "oversize",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.13700926700039417,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large or has an invalid length.\"}",
+          "total_seconds": 0.137
+        },
+        {
+          "case": "oversize",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.1342258069998934,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large or has an invalid length.\"}",
+          "total_seconds": 0.134
+        },
+        {
+          "case": "oversize",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.18706929499967373,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large or has an invalid length.\"}",
+          "total_seconds": 0.187
+        },
+        {
+          "case": "oversize",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.21728064299895777,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large or has an invalid length.\"}",
+          "total_seconds": 0.217
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 1,
+        "p50": 0.087,
+        "p95": 0.087,
+        "max": 0.087
+      },
+      "health_errors": [],
+      "successful_total_seconds": {}
+    },
+    "streams": {
+      "profile": "streamed-rejection-under-worker-load",
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 2,
+      "wall_seconds": 0.537,
+      "results": [
+        {
+          "case": "oversize_stream",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.11345610700118414,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large.\"}",
+          "total_seconds": 0.114
+        },
+        {
+          "case": "oversize_stream",
+          "bytes": 65015510,
+          "stages": [],
+          "upload_seconds": 0.1306202799987659,
+          "upload_status": 413,
+          "outcome": "rejected",
+          "detail": "{\"detail\":\"Upload is too large.\"}",
+          "total_seconds": 0.131
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 1,
+        "p50": 0.022,
+        "p95": 0.022,
+        "max": 0.022
+      },
+      "health_errors": [],
+      "successful_total_seconds": {},
+      "simulated_api": {
+        "delay_seconds": 0.05,
+        "calls": 10
+      }
+    },
+    "c4": {
+      "profile": "single-cpu-4-clients",
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 4,
+      "wall_seconds": 48.756,
+      "results": [
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.061
+            },
+            {
+              "stage": "finished",
+              "seconds": 15.884
+            }
+          ],
+          "upload_seconds": 0.028191149998747278,
+          "upload_status": 303,
+          "job_id": "ae37c9112d89dc8d0eab90a47fe4ca50ec7679f51c2855621e496b7d1b45db5a",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 15.896,
+          "queue_seconds": 0.027926,
+          "service_seconds": 10.706918
+        },
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.06
+            },
+            {
+              "stage": "finished",
+              "seconds": 24.173
+            }
+          ],
+          "upload_seconds": 0.028262716999961413,
+          "upload_status": 303,
+          "job_id": "c64a8dd3fc58a18fd3c61533dec34def99e755e1a0207ffcd4b9b61fd1001eee",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 24.176,
+          "queue_seconds": 10.757972,
+          "service_seconds": 10.979037
+        },
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.059
+            },
+            {
+              "stage": "finished",
+              "seconds": 35.943
+            }
+          ],
+          "upload_seconds": 0.027736140000342857,
+          "upload_status": 303,
+          "job_id": "112d5c7665f8101345e719d68ad61c358eb2986d6e22b6d3beff9174ff79f95d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 35.946,
+          "queue_seconds": 21.757565,
+          "service_seconds": 11.892357
+        },
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.059
+            },
+            {
+              "stage": "finished",
+              "seconds": 48.246
+            }
+          ],
+          "upload_seconds": 0.027255529999820283,
+          "upload_status": 303,
+          "job_id": "3da3da0e05f309863f8fae49f2773fa53b5526f697a95ab15efd5d32c5cf134d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 48.248,
+          "queue_seconds": 33.729944,
+          "service_seconds": 9.031721
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 93,
+        "p50": 0.003,
+        "p95": 0.007,
+        "max": 1.752
+      },
+      "health_errors": [],
+      "successful_total_seconds": {
+        "count": 4,
+        "p50": 24.176,
+        "p95": 48.248,
+        "max": 48.248
+      },
+      "simulated_api": {
+        "delay_seconds": 0.05,
+        "calls": 160
+      }
+    },
+    "c8": {
+      "profile": "single-cpu-8-clients",
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 8,
+      "wall_seconds": 197.228,
+      "results": [
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.108
+            },
+            {
+              "stage": "finished",
+              "seconds": 132.79
+            }
+          ],
+          "upload_seconds": 0.05948485600129061,
+          "upload_status": 303,
+          "job_id": "88d3f0273691fa32b5f2f6b69d32c0234f597d2a9b7c6f3b1a6415bbac2dfd7d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 132.793,
+          "queue_seconds": 113.046523,
+          "service_seconds": 11.160863
+        },
+        {
+          "case": "unfielded",
+          "bytes": 1507,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.105
+            },
+            {
+              "stage": "Detecting PDF fields",
+              "seconds": 110.705
+            },
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 114.723
+            },
+            {
+              "stage": "finished",
+              "seconds": 120.747
+            }
+          ],
+          "upload_seconds": 0.05692640500092239,
+          "upload_status": 303,
+          "job_id": "7b43d1a0eeb584dc51974c382ebf625bf7a091833b60d331ca5d4b8f7ae943af",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 27340,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 120.757,
+          "queue_seconds": 99.422549,
+          "service_seconds": 13.592503
+        },
+        {
+          "case": "word",
+          "bytes": 36702,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.104
+            },
+            {
+              "stage": "Converting Word to PDF",
+              "seconds": 92.553
+            },
+            {
+              "stage": "failed",
+              "seconds": 106.6
+            }
+          ],
+          "upload_seconds": 0.05622645599942189,
+          "upload_status": 303,
+          "job_id": "214d8efd7d847d4b3ac8c3acf5d0ea32b714b73c071abd8c42d0926db2bb45b5",
+          "view_status": 200,
+          "outcome": "failed",
+          "total_seconds": 106.6,
+          "queue_seconds": 82.334032,
+          "service_seconds": 17.049906,
+          "worker_error": "Exception: Conversion failed with status code: 500"
+        },
+        {
+          "case": "medium",
+          "bytes": 16184,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.105
+            },
+            {
+              "stage": "finished",
+              "seconds": 86.597
+            }
+          ],
+          "upload_seconds": 0.05568061200028751,
+          "upload_status": 303,
+          "job_id": "28bde01ed3110b583fccb6764a54ebbbd820160170edb6135d0945700c461d0f",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 60078,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 86.602,
+          "queue_seconds": 20.625491,
+          "service_seconds": 61.566228
+        },
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.104
+            },
+            {
+              "stage": "finished",
+              "seconds": 24.211
+            }
+          ],
+          "upload_seconds": 0.05495428799986257,
+          "upload_status": 303,
+          "job_id": "8d24654ccf60fe884a200c82a618c3d676dd5c76d0685b193ffb5950cf05f074",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 24.213,
+          "queue_seconds": 11.191156,
+          "service_seconds": 9.361576
+        },
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.104
+            },
+            {
+              "stage": "finished",
+              "seconds": 12.175
+            }
+          ],
+          "upload_seconds": 0.05438079200030188,
+          "upload_status": 303,
+          "job_id": "5bb921d20ccdc91cac69a0f54d092d32b26b28a1868ea5497477cf8c93f75fa8",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 12.177,
+          "queue_seconds": 0.013809,
+          "service_seconds": 11.110337
+        },
+        {
+          "case": "boundary",
+          "bytes": 20971520,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 2.004
+            },
+            {
+              "stage": "finished",
+              "seconds": 196.846
+            }
+          ],
+          "upload_seconds": 1.108818891001647,
+          "upload_status": 303,
+          "job_id": "b5fbc3fafbd3f276142bb955e57641caff11a1a7e74a3fa333e42df1443cf90d",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 196.896,
+          "queue_seconds": 155.10258,
+          "service_seconds": 28.497762
+        },
+        {
+          "case": "boundary",
+          "bytes": 20971520,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 1.997
+            },
+            {
+              "stage": "finished",
+              "seconds": 166.71
+            }
+          ],
+          "upload_seconds": 0.3136538529997779,
+          "upload_status": 303,
+          "job_id": "4cc42ad725bc76f65f6cefc4d230e294831a2414a75fcd88320c111a6d25ffad",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 166.821,
+          "queue_seconds": 123.973336,
+          "service_seconds": 31.137919
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 388,
+        "p50": 0.003,
+        "p95": 0.009,
+        "max": 0.595
+      },
+      "health_errors": [],
+      "successful_total_seconds": {
+        "count": 7,
+        "p50": 120.757,
+        "p95": 196.896,
+        "max": 196.896
+      },
+      "simulated_api": {
+        "delay_seconds": 0.05,
+        "calls": 612
+      }
+    },
+    "word-recovery": {
+      "profile": "single-cpu-converter-recovery",
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 1,
+      "wall_seconds": 32.338,
+      "results": [
+        {
+          "case": "word",
+          "bytes": 36702,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.021
+            },
+            {
+              "stage": "Detecting PDF fields",
+              "seconds": 4.031
+            },
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 8.051
+            },
+            {
+              "stage": "finished",
+              "seconds": 16.082
+            }
+          ],
+          "upload_seconds": 0.01039646200115385,
+          "upload_status": 303,
+          "job_id": "68639e62aaf0157c8e575ab4b20aeee9c685df7911594220bb508b0d2f9503cb",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26003,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 16.086,
+          "queue_seconds": 0.014522,
+          "service_seconds": 14.450152
+        },
+        {
+          "case": "word",
+          "bytes": 36702,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.013
+            },
+            {
+              "stage": "Detecting PDF fields",
+              "seconds": 4.023
+            },
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 8.034
+            },
+            {
+              "stage": "finished",
+              "seconds": 16.071
+            }
+          ],
+          "upload_seconds": 0.005807265000839834,
+          "upload_status": 303,
+          "job_id": "a45e67ebb8c4a20832c193608cec07806a4007945186240a2b63615aa84d1c8e",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26003,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 16.075,
+          "queue_seconds": 0.015588,
+          "service_seconds": 12.527539
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 64,
+        "p50": 0.002,
+        "p95": 0.007,
+        "max": 0.024
+      },
+      "health_errors": [],
+      "successful_total_seconds": {
+        "count": 2,
+        "p50": 16.075,
+        "p95": 16.086,
+        "max": 16.086
+      },
+      "simulated_api": {
+        "delay_seconds": 0.05,
+        "calls": 80
+      }
+    },
+    "slow-api": {
+      "profile": "single-cpu-1-second-api",
+      "url": "http://127.0.0.1:18080",
+      "concurrency": 1,
+      "wall_seconds": 50.474,
+      "results": [
+        {
+          "case": "small",
+          "bytes": 3798,
+          "stages": [
+            {
+              "stage": "Analyzing PDF",
+              "seconds": 0.019
+            },
+            {
+              "stage": "finished",
+              "seconds": 50.162
+            }
+          ],
+          "upload_seconds": 0.008352407998245326,
+          "upload_status": 303,
+          "job_id": "6018d2852d851f7e056682e15a1aae3b0ce69078199762ae7db1afb7ece40c90",
+          "view_status": 200,
+          "outcome": "finished",
+          "html_bytes": 26902,
+          "download_status": 200,
+          "valid_pdf": true,
+          "total_seconds": 50.165,
+          "queue_seconds": 0.012168,
+          "service_seconds": 47.973294
+        }
+      ],
+      "health_latency_seconds": {
+        "count": 100,
+        "p50": 0.002,
+        "p95": 0.004,
+        "max": 0.019
+      },
+      "health_errors": [],
+      "successful_total_seconds": {
+        "count": 1,
+        "p50": 50.165,
+        "p95": 50.165,
+        "max": 50.165
+      },
+      "simulated_api": {
+        "delay_seconds": 1.0,
+        "calls": 40
+      }
+    }
+  }
+}

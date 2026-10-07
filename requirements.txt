@@ -9,3 +9,7 @@ pdf2image>=1.17
 formfyxer>=1.0
 rq>=1.16,<2
 redis>=5.0
+
+# FormFyxer/boxdetect use cv2.groupRectangles, removed in OpenCV 5.
+opencv-python<5
+opencv-python-headless<5

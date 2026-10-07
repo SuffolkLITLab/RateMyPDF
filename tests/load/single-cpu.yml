@@ -1,0 +1,13 @@
+# Emulate contention on one logical CPU; does not emulate Lightsail CPU credits.
+# Keep the simulated remote API outside this cpuset.
+services:
+  web:
+    cpuset: "0"
+  worker:
+    cpuset: "0"
+  redis:
+    cpuset: "0"
+  cleanup:
+    cpuset: "0"
+  gotenberg:
+    cpuset: "0"

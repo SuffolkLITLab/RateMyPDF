@@ -25,7 +25,18 @@
 
     let attempts = 0;
     function showFailure(message) {
-      document.getElementById("stats-container").textContent = message;
+      const alert = document.createElement("div");
+      alert.className = "alert alert-warning m-4";
+      alert.setAttribute("role", "alert");
+      const explanation = document.createElement("p");
+      explanation.textContent = message;
+      const retry = document.createElement("a");
+      retry.href = "/";
+      retry.className = "btn btn-primary";
+      retry.textContent = "Try uploading again";
+      alert.append(explanation, retry);
+      document.getElementById("stats-container").replaceChildren(alert);
+      document.getElementById("download-file").hidden = true;
     }
     async function checkJobStatus() {
       if (++attempts > 120) {
@@ -42,7 +53,7 @@
           return;
         }
         if (data.status !== "pending") {
-          showFailure(data.status_message || "Unable to process this file. Try a smaller document.");
+          showFailure(data.status_message || "We couldn't process your document. Please try uploading it again.");
           return;
         }
         const frame = document.getElementById("loading-animation");
@@ -70,9 +81,9 @@
       <h1>PDF Statistics</h1>
       <h2 class="text-break">{{ title }}</h2>
       <p>
-        <a class="btn btn-primary" href="/download/{{ file_hash }}" role="button">Download the file</a>
+        <a id="download-file" class="btn btn-primary" href="/download/{{ file_hash }}" role="button">Download the file</a>
 
-        <a class="btn btn-primary" href="/" role="button">Upload a new PDF</a>
+        <a class="btn btn-primary" href="/" role="button">Upload another document</a>
       </p>
     </div>
   </section>
