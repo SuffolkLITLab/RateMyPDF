@@ -21,6 +21,12 @@
                 <input class="form-control form-control-md" id="file" name="file" type="file" accept=".pdf, application/pdf, .doc, .docx, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document">
             </div>
 
+            <p>Upload blank forms only. Do not include personal or confidential information.
+              Analysis may send document text and field information to external services, including OpenAI.</p>
+            <div>
+              <input id="terms-version" name="terms_version" type="checkbox" value="{{ terms_version }}" required>
+              <label for="terms-version">I agree to the <a href="/terms" target="_blank" rel="noopener">terms of use and privacy notice</a>, including external processing.</label>
+            </div>
                 <button id="upload-button" type="submit" class="btn btn-primary mb-3 mt-3" disabled>Upload file</button>
           </form>
 
@@ -61,6 +67,7 @@
     </div>
   </div>
   <footer class="bg-light py-3">
+    <p class="text-center"><a href="/terms">Terms of use and privacy</a></p>
     <div class="container">
       <div class="row">
         <div class="col-md-12 text-center">

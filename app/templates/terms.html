@@ -1,0 +1,23 @@
+{% extends "ui_base.html" %}
+{% block content %}
+<div class="container py-4">
+  <p>Version {{ terms_version }}</p>
+  <h2>Using RateMyPDF</h2>
+  <p>RateMyPDF is provided by Suffolk University Law School's Legal Innovation and Technology Lab to help authors improve blank forms. Upload only documents you have permission to submit. Do not upload completed forms, personal information, confidential material, or malicious files. Do not use the service to disrupt access for others.</p>
+  <p>You retain ownership of your documents. Uploading gives us permission to store and process them to provide this service. We will not review your documents for other purposes, except to prevent abuse.</p>
+  <p>Scores and suggestions are automated and may be incomplete or wrong. They are not legal advice or a guarantee of accessibility, usability, or legal compliance. Review suggestions before using them. We may limit processing or remove files to protect the service; availability and preservation of results are not guaranteed.</p>
+
+  <h2>What is processed and shared</h2>
+  <p>We process the uploaded document, its filename, extracted text and form fields, and the resulting analysis. Word documents are sent to our configured Gotenberg conversion service. PDFs may be modified to add detected form fields, so a downloaded file may differ from the original.</p>
+  <p>Analysis uses FormFyxer and configured external APIs. Document text and field information may be sent to OpenAI for AI analysis and to Suffolk LIT Lab's SPOT and Tools services for classification or language processing. The exact features depend on the deployment configuration. External providers process data under their own policies, including <a href="https://openai.com/policies/privacy-policy/">OpenAI's privacy policy</a>. This service does not offer a per-upload mode that guarantees local-only processing. If you do not agree to external processing, do not upload a document.</p>
+
+  <h2>Storage and access</h2>
+  <p>Uploaded documents, converted or annotated PDFs, analysis results, and the version and time of your consent are stored on our server. Uploaded files and results are scheduled for cleanup once a week. Files are eligible seven days after their last processing activity and are normally removed within 7–14 days. Queued or running jobs are retained until processing ends; outages or cleanup failures may delay deletion. This schedule also applies to older uploads. Background-job records are normally removed one hour after completion or failure; the separate weekly cleanup removes documents and results. Server logs may contain IP addresses, request URLs, and error information.</p>
+  <p>Anyone with a result link can view the analysis and download the PDF. There is no account or password protecting that link. Keep it private. New uploads receive random links; older links created before this policy may be based on document content and remain accessible. Links are not a suitable safeguard for confidential documents.</p>
+  <p>Pages also load assets from services such as jsDelivr, Cloudflare, Google, and Shields.io. Your browser connects to those services and shares connection information such as your IP address. Their policies apply to those requests.</p>
+
+  <h2>Questions and deletion requests</h2>
+  <p>Contact <a href="mailto:suffolklitlab@gmail.com">suffolklitlab@gmail.com</a> with questions or to request deletion. Include your result link so we can locate the files. Deletion from this server does not necessarily delete provider records or backups. Do not include sensitive document contents in your email.</p>
+  <p><a href="/">Return to upload</a></p>
+</div>
+{% endblock %}

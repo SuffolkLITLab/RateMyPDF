@@ -4,14 +4,15 @@ import math
 import os
 from pathlib import Path
 import re
-from hashlib import sha256
+from secrets import token_hex
+from datetime import datetime, timezone
 from html import escape
 from typing import Tuple, Union, List
 
 import logging
 import pandas
 import textstat
-from fastapi import FastAPI, Request, File, UploadFile, HTTPException
+from fastapi import FastAPI, Request, File, Form, UploadFile, HTTPException
 from fastapi.middleware import Middleware
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -41,6 +42,10 @@ app.add_middleware(UploadLimitMiddleware)
 async def set_url_scheme(request: Request, call_next):
     app.url_scheme = request.url.scheme
     response = await call_next(request)
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if request.url.path.startswith(("/view/", "/download/", "/job-status/")):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
 
 
@@ -59,6 +64,7 @@ if os.getenv("IN_DOCKER", "False").lower() == "true":
     UPLOAD_FOLDER = "/pdf-files"
 else:
     UPLOAD_FOLDER = "/tmp"
+TERMS_VERSION = "2026-10-07"
 ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -205,16 +211,23 @@ def convert_word_to_pdf(input_file: str, output_file: str, gotenberg_url: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def upload_file(request: Request):
-    return templates.TemplateResponse("ratemypdf.html", {"request": request, "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024)})
+    return templates.TemplateResponse(request=request, name="ratemypdf.html", context={"request": request, "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024), "terms_version": TERMS_VERSION})
+
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms(request: Request):
+    return templates.TemplateResponse(request=request,
+        name="terms.html", context={"request": request, "title": "Terms of use and privacy", "terms_version": TERMS_VERSION}
+    )
 
 
 @job("default", connection=conn, timeout=JOB_TIMEOUT)
 def parse_form_job(
     to_path: str,
     filename: str,
-    openai_creds: str,
-    spot_token: str,
-    tools_token: str,
+    openai_creds=None,
+    spot_token=None,
+    tools_token=None,
     debug=False,
 ):
     """
@@ -230,6 +243,11 @@ def parse_form_job(
     Saves:
         stats.json: A JSON file containing the parsed form statistics, saved in the same directory as the PDF file.
     """
+    # Resolve secrets in the worker; new jobs do not serialize credentials into Redis.
+    if openai_creds is None and os.getenv("OPEN_AI__key"):
+        openai_creds = {"org": os.getenv("OPEN_AI__org"), "key": os.environ["OPEN_AI__key"]}
+    spot_token = spot_token or os.getenv("SPOT_TOKEN")
+    tools_token = tools_token or os.getenv("TOOLS_TOKEN")
     was_docx = False
     current_job = get_current_job()
     # Check for DOCX uploads. Convert them to PDF
@@ -269,7 +287,9 @@ def parse_form_job(
 
 
 @app.post("/")
-async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
+async def process_file(
+    file: UploadFile = File(...), terms_version: str = Form("")
+) -> RedirectResponse:
     """Upload a file and process it, then redirect to the view_stats endpoint.
 
     Args:
@@ -278,6 +298,8 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
     Returns:
         RedirectResponse: A response redirecting to the view_stats endpoint with the file_hash as a parameter.
     """
+    if terms_version != TERMS_VERSION:
+        raise HTTPException(status_code=400, detail="Please accept the current terms and privacy notice before uploading.")
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No file selected")
     if file and file.filename and allowed_file(file.filename):
@@ -290,37 +312,24 @@ async def process_file(file: UploadFile = File(...)) -> RedirectResponse:
             raise HTTPException(status_code=413, detail="File exceeds the upload limit")
         if not file_content:
             raise HTTPException(status_code=400, detail="The file is empty")
-        intermediate_dir = str(sha256(file_content).hexdigest())
+        # A fresh unguessable link prevents cross-user cache reuse and content-hash lookups.
+        intermediate_dir = token_hex(32)
         to_path = os.path.join(UPLOAD_FOLDER, intermediate_dir)
-        if os.path.isdir(to_path):
-            if os.path.isfile(os.path.join(to_path, "stats.json")):
-                return RedirectResponse(
-                    url=f"/view/{intermediate_dir}", status_code=303
-                )
-        else:
-            os.mkdir(to_path)
+        os.mkdir(to_path)
+        with open(os.path.join(to_path, "consent.json"), "w") as consent_file:
+            json.dump({"terms_version": TERMS_VERSION, "accepted_at": datetime.now(timezone.utc).isoformat()}, consent_file)
         full_path = os.path.join(to_path, filename)
         with open(full_path, "wb") as write_file:
             write_file.write(file_content)
 
-        logger.info(f"Writing file to disk: {filename}")
+        logger.info("Accepted upload %s", intermediate_dir)
 
         # Generate a unique identifier for the job
         job = queue.enqueue(
             parse_form_job,
             to_path,
             filename,
-            openai_creds=(
-                {
-                    "org": os.environ.get("OPEN_AI__org"),
-                    "key": os.environ.get("OPEN_AI__key"),
-                }
-                if os.environ.get("OPEN_AI__org")
-                else None
-            ),
-            spot_token=os.environ.get("SPOT_TOKEN"),
-            tools_token=os.environ.get("TOOLS_TOKEN"),
-            debug=os.environ.get("RATEMYPDF_DEBUG"),
+            debug=os.environ.get("RATEMYPDF_DEBUG", "false").lower() == "true",
             job_id=intermediate_dir,
             job_timeout=JOB_TIMEOUT,
             result_ttl=3600,
@@ -384,7 +393,7 @@ async def view_stats(request: Request, file_hash: str) -> Response:
         "file_hash": file_hash,
     }
 
-    return templates.TemplateResponse("ratemypdf_stats.html", variables)
+    return templates.TemplateResponse(request=request, name="ratemypdf_stats.html", context=variables)
 
 
 @app.get("/job-status/{job_id}")
@@ -490,8 +499,8 @@ async def get_job_status(request: Request, job_id: str):
     }
 
     # Render the partial template with the stats
-    rendered_stats = templates.TemplateResponse(
-        "_stats_partial.html", vars, media_type="text/html"
+    rendered_stats = templates.TemplateResponse(request=request,
+        name="_stats_partial.html", context=vars, media_type="text/html"
     )
 
     # Return the rendered HTML as a string
@@ -500,7 +509,7 @@ async def get_job_status(request: Request, job_id: str):
 
 @app.get("/loading_animation", response_class=HTMLResponse)
 async def loading_animation(request: Request):
-    return templates.TemplateResponse("loading_animation.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="loading_animation.html", context={"request": request})
 
 
 @app.get("/example_forms.html", response_class=HTMLResponse)
@@ -540,8 +549,8 @@ async def view_examples(request: Request) -> Response:
             "download_link": "https://www.courtformsonline.org/forms/c4e028ca6967bab9268255de6ad08ab2.pdf",
         }
     ]
-    return templates.TemplateResponse(
-        "example_forms.html", {"request": request, "examples": examples}
+    return templates.TemplateResponse(request=request,
+        name="example_forms.html", context={"request": request, "examples": examples}
     )
 
 
