@@ -74,6 +74,20 @@ services:
       start_period: 20s
       
 
+  cleanup:
+    build: .
+    restart: unless-stopped
+    command: python cleanup.py --schedule
+    cpus: "0.10"
+    mem_limit: 128m
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - UPLOAD_RETENTION_DAYS=${UPLOAD_RETENTION_DAYS:-7}
+    volumes:
+      - pdf-files:/pdf-files
+    depends_on:
+      - redis
+
   gotenberg:
     image: gotenberg/gotenberg:7
     cpus: "0.25"

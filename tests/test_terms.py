@@ -34,7 +34,7 @@ def test_policy_and_upload_render(web):
         response = client.get(path)
         assert response.status_code == 200
     assert 'name="terms_version"' in client.get("/").text
-    assert "no automatic file-deletion schedule" in client.get("/terms").text
+    assert "scheduled for cleanup once a week" in client.get("/terms").text
 
 
 def test_private_routes_suppress_caching_and_referrers(web):
