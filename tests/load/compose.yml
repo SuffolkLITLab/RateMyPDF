@@ -1,0 +1,59 @@
+# Isolated benchmark stack: no production ports, credentials, or volumes.
+services:
+  redis:
+    image: redis:alpine
+  web:
+    image: ratemypdf-loadtest:stack
+    ports:
+      - "127.0.0.1:18080:80"
+    environment: &runtime
+      IN_DOCKER: "true"
+      REDIS_URL: redis://redis:6379/0
+      GOTENBERG_URL: http://gotenberg:3000
+      MAX_UPLOAD_BYTES: "20971520"
+      JOB_TIMEOUT: "180"
+      OPENAI_API_KEY: local-simulator-only
+      OPEN_AI__key: local-simulator-only
+      OPENAI_BASE_URL: http://api-simulator:8000/v1
+    volumes:
+      - documents:/pdf-files
+    depends_on:
+      - redis
+  worker:
+    image: ratemypdf-loadtest:stack
+    command: rq worker --url redis://redis:6379/0
+    cpus: 0.50
+    mem_limit: 768m
+    memswap_limit: 768m
+    environment: *runtime
+    volumes:
+      - documents:/pdf-files
+    depends_on:
+      - redis
+  cleanup:
+    image: ratemypdf-loadtest:stack
+    command: python cleanup.py --schedule
+    cpus: 0.10
+    mem_limit: 128m
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - documents:/pdf-files
+      - ../../app/cleanup.py:/app/cleanup.py:ro
+    depends_on:
+      - redis
+  api-simulator:
+    image: ratemypdf-loadtest:stack
+    command: uvicorn api_simulator:app --host 0.0.0.0 --port 8000
+    working_dir: /simulator
+    volumes:
+      - .:/simulator:ro
+    ports:
+      - "127.0.0.1:18081:8000"
+  gotenberg:
+    image: gotenberg/gotenberg:7
+    cpus: 0.25
+    mem_limit: 384m
+    memswap_limit: 384m
+volumes:
+  documents:
